@@ -6,6 +6,7 @@ from openclaw_discord.config import Settings
 from openclaw_discord.controllers import DryRunController
 from openclaw_discord.core import CommandContext, OpenClawCore
 from openclaw_discord.discord_gateway import (
+    DiscordBotTextNotifier,
     DiscordBotVoiceConnection,
     DiscordCommandService,
     build_discord_bot,
@@ -71,8 +72,10 @@ def run_console(settings: Settings, owner_user_id: str) -> int:
 def run_discord(settings: Settings, owner_user_id: str) -> None:
     if not settings.discord_bot_token:
         raise SystemExit("DISCORD_BOT_TOKEN is required for --discord mode.")
-    if not settings.guild_id or not settings.voice_channel_id:
-        raise SystemExit("DISCORD_GUILD_ID and DISCORD_VOICE_CHANNEL_ID are required for --discord mode.")
+    if not settings.guild_id or not settings.voice_channel_id or not settings.text_channel_id:
+        raise SystemExit(
+            "DISCORD_GUILD_ID, DISCORD_VOICE_CHANNEL_ID, and DISCORD_TEXT_CHANNEL_ID are required for --discord mode."
+        )
 
     core = build_core(settings, owner_user_id)
     voice_connection = DiscordBotVoiceConnection()
@@ -84,6 +87,7 @@ def run_discord(settings: Settings, owner_user_id: str) -> None:
     )
     bot = build_discord_bot(command_service=service, guild_id=settings.guild_id)
     voice_connection.set_bot(bot)
+    service.text_notifier = DiscordBotTextNotifier(bot=bot, text_channel_id=settings.text_channel_id)
     bot.run(settings.discord_bot_token)
 
 

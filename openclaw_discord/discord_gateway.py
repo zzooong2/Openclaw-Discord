@@ -25,6 +25,12 @@ class DiscordVoiceConnection(Protocol):
         """Leave the current Discord voice channel."""
 
 
+@runtime_checkable
+class DiscordTextNotifier(Protocol):
+    async def send(self, message: str) -> None:
+        """Send a user-facing status message."""
+
+
 class DiscordCommandService:
     def __init__(
         self,
@@ -33,11 +39,13 @@ class DiscordCommandService:
         voice_channel_id: str,
         core: OpenClawCore,
         voice_connection: DiscordVoiceConnection,
+        text_notifier: DiscordTextNotifier | None = None,
     ) -> None:
         self.owner_user_id = owner_user_id
         self.voice_channel_id = voice_channel_id
         self.core = core
         self.voice_connection = voice_connection
+        self.text_notifier = text_notifier
 
     async def join(self, user_id: str) -> DiscordServiceResult:
         blocked = self._reject_if_not_owner(user_id)
@@ -45,7 +53,7 @@ class DiscordCommandService:
             return blocked
 
         await self.voice_connection.join(self.voice_channel_id)
-        return DiscordServiceResult(True, "음성 채널에 연결했습니다.")
+        return await self._finish(DiscordServiceResult(True, "음성 채널에 연결했습니다."))
 
     async def leave(self, user_id: str) -> DiscordServiceResult:
         blocked = self._reject_if_not_owner(user_id)
@@ -53,7 +61,7 @@ class DiscordCommandService:
             return blocked
 
         await self.voice_connection.leave()
-        return DiscordServiceResult(True, "음성 채널에서 나왔습니다.")
+        return await self._finish(DiscordServiceResult(True, "음성 채널에서 나왔습니다."))
 
     async def voice_mode_off(self, user_id: str) -> DiscordServiceResult:
         blocked = self._reject_if_not_owner(user_id)
@@ -61,12 +69,17 @@ class DiscordCommandService:
             return blocked
 
         result: CommandResult = self.core.handle_text("클로 오프", CommandContext(user_id=user_id))
-        return DiscordServiceResult(result.ok, result.message)
+        return await self._finish(DiscordServiceResult(result.ok, result.message))
 
     def _reject_if_not_owner(self, user_id: str) -> DiscordServiceResult | None:
         if user_id != self.owner_user_id:
             return DiscordServiceResult(False, "차단: 허용되지 않은 사용자입니다.")
         return None
+
+    async def _finish(self, result: DiscordServiceResult) -> DiscordServiceResult:
+        if result.ok and self.text_notifier is not None:
+            await self.text_notifier.send(result.message)
+        return result
 
 
 class DiscordBotVoiceConnection:
@@ -91,6 +104,19 @@ class DiscordBotVoiceConnection:
         if self.voice_client is not None:
             await self.voice_client.disconnect()
             self.voice_client = None
+
+
+class DiscordBotTextNotifier:
+    def __init__(self, *, bot: commands.Bot, text_channel_id: str) -> None:
+        self.bot = bot
+        self.text_channel_id = text_channel_id
+
+    async def send(self, message: str) -> None:
+        channel = self.bot.get_channel(int(self.text_channel_id))
+        if channel is None:
+            raise ValueError(f"Discord text channel not found: {self.text_channel_id}")
+
+        await channel.send(message)
 
 
 def build_discord_bot(*, command_service: DiscordCommandService, guild_id: str) -> commands.Bot:

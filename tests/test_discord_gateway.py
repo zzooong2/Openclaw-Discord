@@ -3,6 +3,7 @@ import asyncio
 from openclaw_discord.controllers import RecordedController
 from openclaw_discord.core import CommandContext, OpenClawCore
 from openclaw_discord.discord_gateway import (
+    DiscordBotTextNotifier,
     DiscordBotVoiceConnection,
     DiscordCommandService,
     DiscordVoiceConnection,
@@ -25,6 +26,14 @@ class FakeVoiceConnection:
 
     async def leave(self):
         self.left += 1
+
+
+class FakeTextNotifier:
+    def __init__(self):
+        self.messages = []
+
+    async def send(self, message):
+        self.messages.append(message)
 
 
 class FakeDiscordVoiceClient:
@@ -55,6 +64,14 @@ class FakeDiscordBot:
         return None
 
 
+class FakeDiscordTextChannel:
+    def __init__(self):
+        self.messages = []
+
+    async def send(self, message):
+        self.messages.append(message)
+
+
 def build_service():
     blocker = SimulatedInputBlocker()
     core = OpenClawCore(
@@ -63,37 +80,41 @@ def build_service():
         input_blocker=blocker,
     )
     voice = FakeVoiceConnection()
+    notifier = FakeTextNotifier()
     service = DiscordCommandService(
         owner_user_id=OWNER_ID,
         voice_channel_id=VOICE_CHANNEL_ID,
         core=core,
         voice_connection=voice,
+        text_notifier=notifier,
     )
-    return service, core, blocker, voice
+    return service, core, blocker, voice, notifier
 
 
 def test_join_connects_configured_voice_channel():
-    service, _, _, voice = build_service()
+    service, _, _, voice, notifier = build_service()
 
     result = asyncio.run(service.join(OWNER_ID))
 
     assert result.ok is True
     assert result.message == "음성 채널에 연결했습니다."
     assert voice.joined == [VOICE_CHANNEL_ID]
+    assert notifier.messages == ["음성 채널에 연결했습니다."]
 
 
 def test_leave_disconnects_voice_channel():
-    service, _, _, voice = build_service()
+    service, _, _, voice, notifier = build_service()
 
     result = asyncio.run(service.leave(OWNER_ID))
 
     assert result.ok is True
     assert result.message == "음성 채널에서 나왔습니다."
     assert voice.left == 1
+    assert notifier.messages == ["음성 채널에서 나왔습니다."]
 
 
 def test_voice_mode_off_turns_core_and_blocker_off():
-    service, core, blocker, _ = build_service()
+    service, core, blocker, _, notifier = build_service()
     core.handle_text("클로 온", context=CommandContext(user_id=OWNER_ID))
 
     result = asyncio.run(service.voice_mode_off(OWNER_ID))
@@ -102,16 +123,18 @@ def test_voice_mode_off_turns_core_and_blocker_off():
     assert result.message == "클로 모드가 꺼졌습니다."
     assert core.voice_mode_enabled is False
     assert blocker.enabled is False
+    assert notifier.messages == ["클로 모드가 꺼졌습니다."]
 
 
 def test_rejects_non_owner_slash_commands():
-    service, _, _, voice = build_service()
+    service, _, _, voice, notifier = build_service()
 
     result = asyncio.run(service.join("someone-else"))
 
     assert result.ok is False
     assert result.message == "차단: 허용되지 않은 사용자입니다."
     assert voice.joined == []
+    assert notifier.messages == []
 
 
 def test_voice_connection_protocol_is_runtime_checkable():
@@ -119,7 +142,7 @@ def test_voice_connection_protocol_is_runtime_checkable():
 
 
 def test_build_discord_bot_exposes_required_command_names():
-    service, _, _, _ = build_service()
+    service, _, _, _, _ = build_service()
 
     bot = build_discord_bot(command_service=service, guild_id="guild-1")
 
@@ -143,3 +166,12 @@ def test_discord_bot_voice_connection_leaves_current_channel():
     asyncio.run(connection.leave())
 
     assert channel.voice_client.disconnected is True
+
+
+def test_discord_bot_text_notifier_sends_to_configured_channel():
+    channel = FakeDiscordTextChannel()
+    notifier = DiscordBotTextNotifier(bot=FakeDiscordBot(channel), text_channel_id="123")
+
+    asyncio.run(notifier.send("테스트 메시지"))
+
+    assert channel.messages == ["테스트 메시지"]
