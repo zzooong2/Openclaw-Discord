@@ -1,111 +1,104 @@
 # OpenClaw Discord
 
-OpenClaw Discord is a Windows-first Discord voice control project. The goal is to let one approved Discord user control a PC by voice while keeping the control surface small, explicit, and recoverable.
+OpenClaw Discord is a Windows-first Discord chat control project. One approved Discord user can control the PC by writing natural Korean commands in one configured text channel.
 
-The first milestone is intentionally conservative: fixed Korean commands, a clear voice-control mode, Discord text feedback, complete logging, and emergency off switches before broad automation is added.
+`rev0.0` contains the earlier Discord voice and phone-microphone experiments. `rev0.1` focuses on the simpler and more reliable chat-control path.
 
-## MVP Scope
+## rev0.1 Scope
 
-- Discord bot listens only in one configured voice channel.
-- Only one configured Discord user can issue commands.
-- Voice control mode is toggled with fixed Korean phrases:
-  - `클로 온`
-  - `클로 오프`
-- When voice control mode is on, physical keyboard and mouse input will eventually be blocked.
-- Early development uses input-block simulation logs before real input blocking is enabled.
-- Emergency off paths:
-  - `Ctrl + Alt + F12`
-  - Discord slash command `/voice-mode off`
-- Discord slash commands:
-  - `/join`
-  - `/leave`
-  - `/voice-mode off`
-- Discord text responses are sent to one configured text channel.
-- Logs are stored as both human-readable text and JSONL.
+- The bot reads only one configured Discord text channel.
+- Only one configured Discord user can issue control commands.
+- The bot ignores messages from other users, other channels, and bots.
+- Commands are interpreted from natural Korean chat, not only exact phrases.
+- Control mode still gates PC actions:
+  - `클로 온`, `클로 켜줘`, `클로 모드 시작해`
+  - `클로 오프`, `클로 꺼줘`, `클로 모드 중지해`
+- Results are posted back to the configured Discord text channel.
+- Risky commands still require confirmation where the core marks them as risky.
+- By default, actions run in `dry_run` mode until you explicitly enable Windows control.
 
-## Command Categories
+## Example Chat
 
-The MVP supports fixed Korean commands only. Aliases are intentionally disabled at first.
+```text
+김현종: 클로 켜줘
+bot: 클로 모드가 켜졌습니다.
 
-- Mode commands: turn OpenClaw voice control on or off.
-- App commands: open or close Notepad, Calculator, Chrome, and File Explorer.
-- Mouse commands: relative movement, screen-position movement, left click, right click, double click.
-- Keyboard commands: shortcuts and short text input.
-- Confirmation commands: confirm selected commands such as closing an app or window.
+김현종: 브라우저 좀 켜줘
+bot: 실행 완료: 브라우저 좀 켜줘
 
-Risky commands such as file deletion, destructive system changes, payments, credential handling, or arbitrary shell execution are out of MVP scope.
+김현종: 계산기 좀 종료해줘
+bot: 확인이 필요합니다: 계산기 좀 종료해줘
 
-## Planned Tech Stack
+김현종: 확인
+bot: 실행 완료: 계산기 좀 종료해줘
+```
 
-- Python
-- `python -m openclaw_discord` entrypoint
-- `discord.py` or a compatible Discord library with slash command support
-- Windows automation libraries first, Windows API only where needed
-- `pytest` for parser, mode, safety, and logging tests
-- `.env` for all runtime configuration
+## Supported Intent Groups
 
-## Development Order
+- Mode: turn OpenClaw control on or off.
+- Apps: open or close Notepad, Calculator, Chrome, and File Explorer.
+- Mouse: move, position, left click, right click, double click.
+- Keyboard: Enter, Escape, common shortcuts, and short text input.
+- Confirmation: confirm or cancel pending risky commands.
 
-1. Document the design, command list, environment variables, and safety boundaries.
-2. Build OpenClaw Core with console-based mock speech input.
-3. Add fixed Korean command parsing.
-4. Add mode, permission, confirmation, and safety checks.
-5. Add structured logging.
-6. Add Windows app, mouse, and keyboard execution adapters.
-7. Add Discord slash commands and text-channel feedback.
-8. Add Discord voice-channel connection and pluggable STT interface.
-9. Reach the first MVP success: saying `클로 온` through Discord voice turns on voice control mode.
-10. Add input-block simulation, then real keyboard/mouse blocking with emergency off paths.
+OpenClaw prefers no action over uncertain action. If a chat message is not understood, it is rejected and logged.
 
 ## Configuration
 
-Runtime secrets and IDs will be read from `.env`. See `docs/env.md` for the planned variable list.
+Create `.env` from `.env.example`.
 
-Never commit Discord bot tokens, user tokens, API keys, or machine-specific secrets.
+Required for chat control:
 
-The target Discord server invite shared during planning is `https://discord.gg/VGySqE2y`. The bot runtime still needs numeric Discord IDs in `.env`; the invite URL is not enough for channel-scoped slash commands or voice-channel joins.
+```dotenv
+DISCORD_BOT_TOKEN=replace-me
+DISCORD_GUILD_ID=123456789012345678
+DISCORD_OWNER_USER_ID=123456789012345678
+DISCORD_TEXT_CHANNEL_ID=123456789012345678
+```
+
+Optional voice fields from `rev0.0` can stay empty for `rev0.1`:
+
+```dotenv
+DISCORD_VOICE_CHANNEL_ID=
+OPENCLAW_ENABLE_VOICE_RECEIVE=false
+```
+
+Set real PC control only when you are ready:
+
+```dotenv
+OPENCLAW_CONTROLLER_MODE=dry_run
+```
+
+Use `OPENCLAW_CONTROLLER_MODE=windows` to perform real Windows app, mouse, and keyboard actions.
+
+Discord Developer Portal must have **Message Content Intent** enabled for the bot, because `rev0.1` reads normal chat messages.
 
 ## Running
 
-Console mock mode:
-
-```bash
-python -m openclaw_discord
-```
-
-Discord slash-command mode:
-
-```bash
-python -m openclaw_discord --discord
-```
-
-Discord bot plus phone browser microphone page:
-
-```bash
-python -m openclaw_discord --discord --phone-mic
-```
-
-Open the printed LAN URL on your phone. Use the speech button if the browser allows speech recognition, or type/dictate into the text box and send. Results still appear in the configured Discord text channel.
-
-Check Discord `.env` values before starting the bot:
+Check configuration:
 
 ```bash
 python -m openclaw_discord --check-config
 ```
 
-By default, commands use `OPENCLAW_CONTROLLER_MODE=dry_run`. Set `OPENCLAW_CONTROLLER_MODE=windows` only when you are ready for the bot to perform real Windows app, mouse, and keyboard actions.
+Run the Discord chat-control bot:
 
-Current Discord commands:
+```bash
+python -m openclaw_discord --discord
+```
 
-- `/join`
-- `/leave`
-- `/voice-mode off`
-- `/debug-speech text:<command>` for owner-only pipeline testing before real STT is enabled
+Console mock mode is still available:
 
-Discord voice receive is isolated behind an optional adapter. See `docs/voice-receive.md` before enabling real voice recognition.
+```bash
+python -m openclaw_discord
+```
 
-For the Discord server setup checklist, see `docs/discord-setup.md`.
+## Legacy Voice Experiments
+
+The older slash-command, Discord voice receive, and phone-microphone files are preserved from `rev0.0` for reference. They are not needed for `rev0.1` chat control.
 
 ## Safety Notes
 
-OpenClaw must prefer no action over uncertain action. If a voice command is not recognized exactly, it should be rejected and logged. If voice control mode is off, PC-control commands should be blocked. If an emergency off path is triggered, the system should immediately return to normal keyboard and mouse behavior.
+Never commit Discord bot tokens, user tokens, API keys, or machine-specific secrets.
+
+Risky commands such as file deletion, destructive system changes, payments, credential handling, or arbitrary shell execution are out of scope.

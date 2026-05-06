@@ -113,9 +113,9 @@ def run_discord(
 ) -> None:
     if not settings.discord_bot_token:
         raise SystemExit("DISCORD_BOT_TOKEN is required for --discord mode.")
-    if not settings.guild_id or not settings.voice_channel_id or not settings.text_channel_id:
+    if not settings.guild_id or not settings.text_channel_id:
         raise SystemExit(
-            "DISCORD_GUILD_ID, DISCORD_VOICE_CHANNEL_ID, and DISCORD_TEXT_CHANNEL_ID are required for --discord mode."
+            "DISCORD_GUILD_ID and DISCORD_TEXT_CHANNEL_ID are required for --discord mode."
         )
 
     core = build_core(settings, owner_user_id)
@@ -123,6 +123,7 @@ def run_discord(
     service = DiscordCommandService(
         owner_user_id=owner_user_id,
         voice_channel_id=settings.voice_channel_id,
+        text_channel_id=settings.text_channel_id,
         core=core,
         voice_connection=voice_connection,
     )

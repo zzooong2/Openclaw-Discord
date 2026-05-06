@@ -37,12 +37,14 @@ class DiscordCommandService:
         *,
         owner_user_id: str,
         voice_channel_id: str,
+        text_channel_id: str = "",
         core: OpenClawCore,
         voice_connection: DiscordVoiceConnection,
         text_notifier: DiscordTextNotifier | None = None,
     ) -> None:
         self.owner_user_id = owner_user_id
         self.voice_channel_id = voice_channel_id
+        self.text_channel_id = text_channel_id
         self.core = core
         self.voice_connection = voice_connection
         self.text_notifier = text_notifier
@@ -51,6 +53,8 @@ class DiscordCommandService:
         blocked = self._reject_if_not_owner(user_id)
         if blocked is not None:
             return blocked
+        if not self.voice_channel_id:
+            return await self._finish(DiscordServiceResult(False, "차단: 음성 채널이 설정되지 않았습니다."), notify_blocked=True)
 
         await self.voice_connection.join(self.voice_channel_id)
         return await self._finish(DiscordServiceResult(True, "음성 채널에 연결했습니다."))
@@ -77,6 +81,20 @@ class DiscordCommandService:
             return blocked
 
         result: CommandResult = self.core.handle_text(text, CommandContext(user_id=user_id))
+        return await self._finish(DiscordServiceResult(result.ok, result.message), notify_blocked=True)
+
+    async def process_chat_message(
+        self,
+        *,
+        user_id: str,
+        channel_id: str,
+        content: str,
+        author_is_bot: bool = False,
+    ) -> DiscordServiceResult | None:
+        if author_is_bot or channel_id != self.text_channel_id or user_id != self.owner_user_id:
+            return None
+
+        result: CommandResult = self.core.handle_text(content, CommandContext(user_id=user_id))
         return await self._finish(DiscordServiceResult(result.ok, result.message), notify_blocked=True)
 
     def _reject_if_not_owner(self, user_id: str) -> DiscordServiceResult | None:
@@ -186,6 +204,8 @@ class DiscordBotTextNotifier:
 def build_discord_bot(*, command_service: DiscordCommandService, guild_id: str) -> commands.Bot:
     intents = discord.Intents.default()
     intents.voice_states = True
+    intents.messages = True
+    intents.message_content = True
     bot = commands.Bot(command_prefix="!", intents=intents)
     guild = discord.Object(id=int(guild_id)) if guild_id.isdigit() else None
 
@@ -219,6 +239,16 @@ def build_discord_bot(*, command_service: DiscordCommandService, guild_id: str) 
     @bot.event
     async def on_ready() -> None:
         await sync_application_commands(bot, guild_id)
+
+    @bot.event
+    async def on_message(message: discord.Message) -> None:
+        await command_service.process_chat_message(
+            user_id=str(message.author.id),
+            channel_id=str(message.channel.id),
+            content=message.content,
+            author_is_bot=message.author.bot,
+        )
+        await bot.process_commands(message)
 
     return bot
 

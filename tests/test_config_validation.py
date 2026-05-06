@@ -23,6 +23,16 @@ def test_validate_discord_settings_accepts_complete_numeric_ids():
     assert validate_discord_settings(make_settings()) == []
 
 
+def test_validate_discord_settings_allows_missing_voice_channel_for_chat_control():
+    assert validate_discord_settings(make_settings(voice_channel_id="")) == []
+
+
+def test_validate_discord_settings_requires_voice_channel_when_voice_receive_enabled():
+    issues = validate_discord_settings(make_settings(voice_channel_id="", enable_voice_receive=True))
+
+    assert issues == [ConfigIssue("DISCORD_VOICE_CHANNEL_ID", "Discord ID is required when voice receive is enabled.")]
+
+
 def test_validate_discord_settings_reports_missing_token():
     issues = validate_discord_settings(make_settings(discord_bot_token=""))
 
