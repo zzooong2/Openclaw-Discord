@@ -8,6 +8,7 @@ from openclaw_discord.speech_bridge import ThreadSafeSpeechBridge
 from openclaw_discord.speech_pipeline import SpeechCommandPipeline
 from openclaw_discord.speech_sink_factory import SpeechRecognitionSinkFactory
 from openclaw_discord.discord_gateway import DiscordTextNotifier
+from openclaw_discord.voice_recv_patch import patch_installed_voice_recv
 
 
 class VoiceReceiveConnection:
@@ -61,6 +62,7 @@ class VoiceReceiveConnection:
     def _import_voice_recv() -> Any:
         try:
             from discord.ext import voice_recv
+            patch_installed_voice_recv()
         except ImportError as exc:
             raise RuntimeError(
                 "discord-ext-voice-recv is required for Discord voice receive. "
