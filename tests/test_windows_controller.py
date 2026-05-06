@@ -1,6 +1,7 @@
 from openclaw_discord.commands import parse_command
 from openclaw_discord.windows_controller import (
     APP_COMMANDS,
+    PyAutoGuiInputDriver,
     WindowsController,
 )
 
@@ -41,6 +42,22 @@ class FakeInputDriver:
 
     def type_text(self, text):
         self.calls.append(("type_text", text))
+
+
+class FakePyAutoGui:
+    def __init__(self):
+        self.calls = []
+
+    def hotkey(self, *keys):
+        self.calls.append(("hotkey", keys))
+
+
+class FakeClipboard:
+    def __init__(self):
+        self.copied = []
+
+    def copy(self, text):
+        self.copied.append(text)
 
 
 def test_opens_known_app():
@@ -104,3 +121,13 @@ def test_sends_click_and_keyboard_commands():
         ("type_text", "안녕하세요"),
     ]
 
+
+def test_pyautogui_input_driver_types_text_through_clipboard_paste():
+    pyautogui = FakePyAutoGui()
+    clipboard = FakeClipboard()
+    driver = PyAutoGuiInputDriver(pyautogui=pyautogui, clipboard=clipboard)
+
+    driver.type_text("안녕하세요")
+
+    assert clipboard.copied == ["안녕하세요"]
+    assert pyautogui.calls == [("hotkey", ("ctrl", "v"))]

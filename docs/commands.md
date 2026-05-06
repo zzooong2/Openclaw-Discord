@@ -76,9 +76,8 @@ The MVP accepts exact Korean commands only. Aliases are disabled at first, so ev
 | --- | --- |
 | `<짧은 문장> 입력` | Type the short Korean text before `입력` |
 
-Text input is limited in MVP. The parser should reject empty text and overly long text.
+Text input is limited in MVP. The Windows adapter types Korean text by copying it to the clipboard and pressing `Ctrl+V`, which is more reliable for Korean than direct key-by-key typing.
 
 ## Out of Scope for MVP
 
 The MVP must not implement arbitrary shell commands, file deletion, payment actions, credential entry automation, account management, system settings changes, or broad natural-language command guessing.
-

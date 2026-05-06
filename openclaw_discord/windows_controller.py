@@ -61,10 +61,22 @@ class SubprocessRunner:
 
 
 class PyAutoGuiInputDriver:
-    def __init__(self, *, default_step: int = 120, small_step: int = 30) -> None:
-        import pyautogui
+    def __init__(
+        self,
+        *,
+        default_step: int = 120,
+        small_step: int = 30,
+        pyautogui: object | None = None,
+        clipboard: object | None = None,
+    ) -> None:
+        if pyautogui is None:
+            import pyautogui
+
+        if clipboard is None:
+            import pyperclip as clipboard
 
         self.pyautogui = pyautogui
+        self.clipboard = clipboard
         self.default_step = default_step
         self.small_step = small_step
 
@@ -95,7 +107,8 @@ class PyAutoGuiInputDriver:
         self.pyautogui.hotkey(*keys)
 
     def type_text(self, text: str) -> None:
-        self.pyautogui.write(text)
+        self.clipboard.copy(text)
+        self.pyautogui.hotkey("ctrl", "v")
 
 
 class WindowsController:
@@ -157,4 +170,3 @@ class WindowsController:
             self.input_driver.type_text(command.payload["text"])
         else:
             raise ValueError(f"Unsupported keyboard action: {command.action}")
-
