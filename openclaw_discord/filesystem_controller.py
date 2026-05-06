@@ -73,6 +73,7 @@ class FolderActionResult:
     ok: bool
     message: str
     path: Path
+    candidates: list[Path] | None = None
 
 
 class FolderNavigator:
@@ -99,6 +100,19 @@ class FolderNavigator:
 
     def go_to(self, target: str | Path) -> FolderActionResult:
         path = self._resolve_target(target)
+        matched_children: list[Path] | None = None
+        if not path.exists() and isinstance(target, str):
+            matched_children = self._find_child_folder_matches(target)
+            if len(matched_children) == 1:
+                path = matched_children[0]
+            elif len(matched_children) > 1:
+                names = ", ".join(child.name for child in matched_children[:5])
+                return FolderActionResult(
+                    False,
+                    f"폴더 이름이 여러 개와 일치합니다: {names}",
+                    self.current_path,
+                    matched_children,
+                )
         if not path.exists():
             return FolderActionResult(False, f"폴더를 찾을 수 없습니다: {path}", self.current_path)
         if not path.is_dir():
@@ -132,3 +146,28 @@ class FolderNavigator:
         except ValueError:
             return False
         return True
+
+    def _find_child_folder_matches(self, target: str) -> list[Path]:
+        target_key = self._match_key(target)
+        if not target_key:
+            return []
+
+        try:
+            children = [child for child in self.current_path.iterdir() if child.is_dir() and self._is_allowed(child)]
+        except OSError:
+            return []
+
+        exact = [child for child in children if self._match_key(child.name) == target_key]
+        if exact:
+            return sorted(exact, key=lambda child: child.name.lower())
+
+        contained = [
+            child
+            for child in children
+            if target_key in self._match_key(child.name) or self._match_key(child.name) in target_key
+        ]
+        return sorted(contained, key=lambda child: child.name.lower())
+
+    @staticmethod
+    def _match_key(value: str) -> str:
+        return "".join(character for character in value.casefold() if character.isalnum())

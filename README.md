@@ -37,7 +37,7 @@ bot: 이동한 폴더: C:\Users\이안\Downloads
 
 - Mode: turn OpenClaw control on or off.
 - Apps: open or close Notepad, Calculator, Chrome, and File Explorer.
-- Folders: show, open, enter, and move up from the current folder. Existing File Explorer windows are reused when possible.
+- Folders: show, open, enter, and move up from the current folder. Existing File Explorer windows are reused when possible, and child folders can be reached by partial name.
 - Mouse: move, position, left click, right click, double click.
 - Keyboard: Enter, Escape, common shortcuts, and short text input.
 - Confirmation: confirm or cancel pending risky commands.

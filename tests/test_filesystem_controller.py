@@ -43,6 +43,32 @@ def test_folder_navigator_goes_to_child_folder(tmp_path):
     assert runner.opened == [child.resolve()]
 
 
+def test_folder_navigator_goes_to_child_folder_by_display_name(tmp_path):
+    child = tmp_path / "검색 결과"
+    child.mkdir()
+    runner = FakeFolderRunner()
+    navigator = FolderNavigator(current_path=tmp_path, runner=runner)
+
+    result = navigator.go_to("검색")
+
+    assert result.ok is True
+    assert navigator.current_path == child.resolve()
+    assert runner.opened == [child.resolve()]
+
+
+def test_folder_navigator_goes_to_child_folder_ignoring_case_and_spaces(tmp_path):
+    child = tmp_path / "OpenClaw Discord"
+    child.mkdir()
+    runner = FakeFolderRunner()
+    navigator = FolderNavigator(current_path=tmp_path, runner=runner)
+
+    result = navigator.go_to("openclawdiscord")
+
+    assert result.ok is True
+    assert navigator.current_path == child.resolve()
+    assert runner.opened == [child.resolve()]
+
+
 def test_folder_navigator_goes_to_parent_folder(tmp_path):
     child = tmp_path / "work"
     child.mkdir()
@@ -91,6 +117,18 @@ def test_folder_navigator_rejects_missing_folder(tmp_path):
 
     assert result.ok is False
     assert result.message == f"폴더를 찾을 수 없습니다: {(tmp_path / 'missing').resolve()}"
+    assert navigator.current_path == tmp_path.resolve()
+
+
+def test_folder_navigator_reports_ambiguous_child_folder_match(tmp_path):
+    (tmp_path / "검색 A").mkdir()
+    (tmp_path / "검색 B").mkdir()
+    navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
+
+    result = navigator.go_to("검색")
+
+    assert result.ok is False
+    assert result.message == "폴더 이름이 여러 개와 일치합니다: 검색 A, 검색 B"
     assert navigator.current_path == tmp_path.resolve()
 
 
