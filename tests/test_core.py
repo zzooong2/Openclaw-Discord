@@ -94,6 +94,21 @@ def test_closes_app_without_confirmation():
     assert controller.calls == [parse_command("계산기 닫아")]
 
 
+def test_controller_failure_returns_blocked_result():
+    class FailingController:
+        def execute(self, command):
+            raise ValueError("폴더를 찾을 수 없습니다: C:\\project")
+
+    core = OpenClawCore(owner_user_id=OWNER_ID, controller=FailingController())
+
+    handle(core, "클로 온")
+    result = handle(core, "프로젝트 폴더로 이동해줘")
+
+    assert result.ok is False
+    assert result.status == "failure"
+    assert result.message == "실패: 폴더를 찾을 수 없습니다: C:\\project"
+
+
 def test_cancel_without_pending_confirmation_is_harmless():
     controller = RecordedController()
     core = OpenClawCore(owner_user_id=OWNER_ID, controller=controller)

@@ -69,6 +69,23 @@ def test_folder_navigator_goes_to_child_folder_ignoring_case_and_spaces(tmp_path
     assert runner.opened == [child.resolve()]
 
 
+def test_folder_navigator_goes_to_folder_from_extra_search_root(tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+    drive_root = tmp_path / "drive"
+    drive_root.mkdir()
+    project = drive_root / "project"
+    project.mkdir()
+    runner = FakeFolderRunner()
+    navigator = FolderNavigator(current_path=home, extra_search_roots=[drive_root], runner=runner)
+
+    result = navigator.go_to("project")
+
+    assert result.ok is True
+    assert navigator.current_path == project.resolve()
+    assert runner.opened == [project.resolve()]
+
+
 def test_folder_navigator_goes_to_parent_folder(tmp_path):
     child = tmp_path / "work"
     child.mkdir()

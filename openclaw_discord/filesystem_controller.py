@@ -82,10 +82,12 @@ class FolderNavigator:
         *,
         current_path: Path | None = None,
         sandbox_root: Path | None = None,
+        extra_search_roots: list[Path] | None = None,
         runner: FolderRunner | None = None,
     ) -> None:
         self.sandbox_root = sandbox_root.resolve() if sandbox_root is not None else None
         self.current_path = self._normalize(current_path or Path.home())
+        self.extra_search_roots = [self._normalize(root) for root in extra_search_roots or self._default_extra_search_roots()]
         self.runner = runner or ReusingWindowsFolderRunner()
 
     def show_current(self) -> FolderActionResult:
@@ -133,6 +135,11 @@ class FolderNavigator:
         if home_candidate.exists():
             return self._normalize(home_candidate)
 
+        for root in self.extra_search_roots:
+            candidate = root / path
+            if candidate.exists():
+                return self._normalize(candidate)
+
         return self._normalize(self.current_path / path)
 
     def _normalize(self, path: Path) -> Path:
@@ -153,7 +160,12 @@ class FolderNavigator:
             return []
 
         try:
-            children = [child for child in self.current_path.iterdir() if child.is_dir() and self._is_allowed(child)]
+            children = [
+                child
+                for root in self._search_roots()
+                for child in self._safe_child_directories(root)
+                if self._is_allowed(child)
+            ]
         except OSError:
             return []
 
@@ -171,3 +183,22 @@ class FolderNavigator:
     @staticmethod
     def _match_key(value: str) -> str:
         return "".join(character for character in value.casefold() if character.isalnum())
+
+    def _search_roots(self) -> list[Path]:
+        roots = [self.current_path]
+        for root in self.extra_search_roots:
+            if root not in roots:
+                roots.append(root)
+        return roots
+
+    @staticmethod
+    def _safe_child_directories(root: Path) -> list[Path]:
+        try:
+            return [child for child in root.iterdir() if child.is_dir()]
+        except OSError:
+            return []
+
+    @staticmethod
+    def _default_extra_search_roots() -> list[Path]:
+        roots = [Path("C:/")]
+        return [root for root in roots if root.exists()]

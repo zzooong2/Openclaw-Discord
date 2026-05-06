@@ -86,7 +86,10 @@ class OpenClawCore:
         return self._execute(pending)
 
     def _execute(self, command: Command) -> CommandResult:
-        detail = self.controller.execute(command)
+        try:
+            detail = self.controller.execute(command)
+        except ValueError as exc:
+            return CommandResult(False, "failure", f"실패: {exc}", command)
         message = detail or f"실행 완료: {command.raw_text}"
         return CommandResult(True, "success", message, command)
 
