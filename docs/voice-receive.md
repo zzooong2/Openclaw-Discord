@@ -18,7 +18,7 @@ OPENCLAW_ENABLE_VOICE_RECEIVE=true
 
 The first STT sink uses `discord.ext.voice_recv.extras.speechrecognition.SpeechRecognitionSink` with the `google` recognizer. That gives us a fast Korean-capable prototype, but it still depends on a third-party speech service. The code keeps this behind `SpeechRecognitionSinkFactory` so the recognizer can be swapped later.
 
-Voice receive is currently pinned to `discord.py==2.6.4`. Open issues in `discord-ext-voice-recv` report corrupted/gibberish Opus packets after upgrading to `discord.py 2.7.1`, so avoid upgrading until that extension catches up.
+Voice receive is currently pinned to `discord.py==2.7.1` because Discord rejects older non-DAVE voice clients from regular voice channels with close code `4017`.
 
 References:
 
