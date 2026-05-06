@@ -63,7 +63,28 @@ Runtime secrets and IDs will be read from `.env`. See `docs/env.md` for the plan
 
 Never commit Discord bot tokens, user tokens, API keys, or machine-specific secrets.
 
+The target Discord server invite shared during planning is `https://discord.gg/VGySqE2y`. The bot runtime still needs numeric Discord IDs in `.env`; the invite URL is not enough for channel-scoped slash commands or voice-channel joins.
+
+## Running
+
+Console mock mode:
+
+```bash
+python -m openclaw_discord
+```
+
+Discord slash-command mode:
+
+```bash
+python -m openclaw_discord --discord
+```
+
+Current Discord commands:
+
+- `/join`
+- `/leave`
+- `/voice-mode off`
+
 ## Safety Notes
 
 OpenClaw must prefer no action over uncertain action. If a voice command is not recognized exactly, it should be rejected and logged. If voice control mode is off, PC-control commands should be blocked. If an emergency off path is triggered, the system should immediately return to normal keyboard and mouse behavior.
-

@@ -4,6 +4,8 @@ All runtime configuration is stored in `.env`. Do not commit a real `.env` file 
 
 ## Required
 
+Discord server invite for reference: `https://discord.gg/VGySqE2y`
+
 | Variable | Description |
 | --- | --- |
 | `DISCORD_BOT_TOKEN` | Discord bot token |
@@ -46,4 +48,3 @@ OPENCLAW_MOUSE_STEP=120
 OPENCLAW_MOUSE_SMALL_STEP=30
 OPENCLAW_MAX_TEXT_INPUT_CHARS=40
 ```
-

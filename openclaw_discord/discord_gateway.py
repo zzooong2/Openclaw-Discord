@@ -1,0 +1,123 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
+
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+from openclaw_discord.core import CommandContext, CommandResult, OpenClawCore
+
+
+@dataclass(frozen=True)
+class DiscordServiceResult:
+    ok: bool
+    message: str
+
+
+@runtime_checkable
+class DiscordVoiceConnection(Protocol):
+    async def join(self, channel_id: str) -> None:
+        """Join the configured Discord voice channel."""
+
+    async def leave(self) -> None:
+        """Leave the current Discord voice channel."""
+
+
+class DiscordCommandService:
+    def __init__(
+        self,
+        *,
+        owner_user_id: str,
+        voice_channel_id: str,
+        core: OpenClawCore,
+        voice_connection: DiscordVoiceConnection,
+    ) -> None:
+        self.owner_user_id = owner_user_id
+        self.voice_channel_id = voice_channel_id
+        self.core = core
+        self.voice_connection = voice_connection
+
+    async def join(self, user_id: str) -> DiscordServiceResult:
+        blocked = self._reject_if_not_owner(user_id)
+        if blocked is not None:
+            return blocked
+
+        await self.voice_connection.join(self.voice_channel_id)
+        return DiscordServiceResult(True, "음성 채널에 연결했습니다.")
+
+    async def leave(self, user_id: str) -> DiscordServiceResult:
+        blocked = self._reject_if_not_owner(user_id)
+        if blocked is not None:
+            return blocked
+
+        await self.voice_connection.leave()
+        return DiscordServiceResult(True, "음성 채널에서 나왔습니다.")
+
+    async def voice_mode_off(self, user_id: str) -> DiscordServiceResult:
+        blocked = self._reject_if_not_owner(user_id)
+        if blocked is not None:
+            return blocked
+
+        result: CommandResult = self.core.handle_text("클로 오프", CommandContext(user_id=user_id))
+        return DiscordServiceResult(result.ok, result.message)
+
+    def _reject_if_not_owner(self, user_id: str) -> DiscordServiceResult | None:
+        if user_id != self.owner_user_id:
+            return DiscordServiceResult(False, "차단: 허용되지 않은 사용자입니다.")
+        return None
+
+
+class DiscordBotVoiceConnection:
+    def __init__(self, *, bot: commands.Bot | None = None) -> None:
+        self.bot = bot
+        self.voice_client: object | None = None
+
+    def set_bot(self, bot: commands.Bot) -> None:
+        self.bot = bot
+
+    async def join(self, channel_id: str) -> None:
+        if self.bot is None:
+            raise RuntimeError("Discord bot is not attached to the voice connection.")
+
+        channel = self.bot.get_channel(int(channel_id))
+        if channel is None:
+            raise ValueError(f"Discord voice channel not found: {channel_id}")
+
+        self.voice_client = await channel.connect()
+
+    async def leave(self) -> None:
+        if self.voice_client is not None:
+            await self.voice_client.disconnect()
+            self.voice_client = None
+
+
+def build_discord_bot(*, command_service: DiscordCommandService, guild_id: str) -> commands.Bot:
+    intents = discord.Intents.default()
+    intents.voice_states = True
+    bot = commands.Bot(command_prefix="!", intents=intents)
+    guild = discord.Object(id=int(guild_id)) if guild_id.isdigit() else None
+
+    async def respond(interaction: discord.Interaction, result: DiscordServiceResult) -> None:
+        await interaction.response.send_message(result.message, ephemeral=not result.ok)
+
+    @bot.tree.command(name="join", description="Join the configured OpenClaw voice channel.", guild=guild)
+    async def join_command(interaction: discord.Interaction) -> None:
+        result = await command_service.join(str(interaction.user.id))
+        await respond(interaction, result)
+
+    @bot.tree.command(name="leave", description="Leave the current OpenClaw voice channel.", guild=guild)
+    async def leave_command(interaction: discord.Interaction) -> None:
+        result = await command_service.leave(str(interaction.user.id))
+        await respond(interaction, result)
+
+    voice_mode_group = app_commands.Group(name="voice-mode", description="Control OpenClaw voice mode.", guild_ids=None)
+
+    @voice_mode_group.command(name="off", description="Emergency-disable OpenClaw voice mode.")
+    async def voice_mode_off_command(interaction: discord.Interaction) -> None:
+        result = await command_service.voice_mode_off(str(interaction.user.id))
+        await respond(interaction, result)
+
+    bot.tree.add_command(voice_mode_group, guild=guild)
+    return bot

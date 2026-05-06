@@ -12,3 +12,10 @@ def test_cli_help_exits_cleanly(capsys):
     assert exc_info.value.code == 0
     assert "OpenClaw Discord console mock" in capsys.readouterr().out
 
+
+def test_cli_accepts_discord_mode_flag():
+    parser = build_parser()
+
+    args = parser.parse_args(["--discord"])
+
+    assert args.discord is True
