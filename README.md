@@ -96,6 +96,8 @@ Current Discord commands:
 
 Discord voice receive is isolated behind an optional adapter. See `docs/voice-receive.md` before enabling real voice recognition.
 
+For the Discord server setup checklist, see `docs/discord-setup.md`.
+
 ## Safety Notes
 
 OpenClaw must prefer no action over uncertain action. If a voice command is not recognized exactly, it should be rejected and logged. If voice control mode is off, PC-control commands should be blocked. If an emergency off path is triggered, the system should immediately return to normal keyboard and mouse behavior.
