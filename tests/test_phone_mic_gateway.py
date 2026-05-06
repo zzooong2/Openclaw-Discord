@@ -29,6 +29,9 @@ def test_phone_mic_html_contains_speech_controls():
     assert "SpeechRecognition" in html
     assert "/speech" in html
     assert "클로 온" in html
+    assert "window.isSecureContext" in html
+    assert "브라우저 상태" in html
+    assert "start failed" in html
 
 
 def test_phone_mic_speech_handler_processes_text_with_owner_id():

@@ -34,6 +34,7 @@ def build_phone_mic_html() -> str:
   <main>
     <h1>OpenClaw Phone Mic</h1>
     <p id="status">대기 중</p>
+    <p id="diagnostics">브라우저 상태 확인 중</p>
     <div class="row">
       <button id="start">말하기 시작</button>
       <button id="stop" class="secondary">중지</button>
@@ -45,9 +46,16 @@ def build_phone_mic_html() -> str:
   <script>
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     const statusEl = document.querySelector('#status');
+    const diagnosticsEl = document.querySelector('#diagnostics');
     const resultEl = document.querySelector('#result');
     const manualEl = document.querySelector('#manual');
+    const startButton = document.querySelector('#start');
+    const stopButton = document.querySelector('#stop');
     let recognition = null;
+
+    function setDiagnostics(message) {
+      diagnosticsEl.textContent = `브라우저 상태: ${message}`;
+    }
 
     async function sendText(text) {
       const value = String(text || '').trim();
@@ -68,8 +76,14 @@ def build_phone_mic_html() -> str:
       if (event.key === 'Enter') sendText(manualEl.value);
     });
 
+    const secureStatus = window.isSecureContext ? '보안 컨텍스트' : '보안 컨텍스트 아님';
+    const speechStatus = SpeechRecognition ? '음성 인식 지원' : '음성 인식 미지원';
+    setDiagnostics(`${secureStatus}, ${speechStatus}, ${location.protocol}`);
+
     if (!SpeechRecognition) {
       statusEl.textContent = '브라우저 음성 인식을 사용할 수 없습니다. 텍스트 전송을 사용하세요.';
+      startButton.disabled = true;
+      stopButton.disabled = true;
     } else {
       recognition = new SpeechRecognition();
       recognition.lang = 'ko-KR';
@@ -83,8 +97,21 @@ def build_phone_mic_html() -> str:
         manualEl.value = transcript;
         sendText(transcript);
       };
-      document.querySelector('#start').addEventListener('click', () => recognition.start());
-      document.querySelector('#stop').addEventListener('click', () => recognition.stop());
+      startButton.addEventListener('click', () => {
+        try {
+          statusEl.textContent = '음성 인식 시작 요청 중';
+          recognition.start();
+        } catch (error) {
+          statusEl.textContent = `start failed: ${error.message}`;
+        }
+      });
+      stopButton.addEventListener('click', () => {
+        try {
+          recognition.stop();
+        } catch (error) {
+          statusEl.textContent = `stop failed: ${error.message}`;
+        }
+      });
     }
   </script>
 </body>
