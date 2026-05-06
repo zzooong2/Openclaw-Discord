@@ -33,6 +33,16 @@ def test_cli_accepts_check_config_flag():
     assert args.check_config is True
 
 
+def test_cli_accepts_phone_mic_flag():
+    parser = build_parser()
+
+    args = parser.parse_args(["--discord", "--phone-mic", "--phone-mic-port", "8787"])
+
+    assert args.discord is True
+    assert args.phone_mic is True
+    assert args.phone_mic_port == 8787
+
+
 def test_build_core_uses_configured_controller_mode():
     settings = Settings(
         discord_bot_token="",

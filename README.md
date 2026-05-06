@@ -79,6 +79,14 @@ Discord slash-command mode:
 python -m openclaw_discord --discord
 ```
 
+Discord bot plus phone browser microphone page:
+
+```bash
+python -m openclaw_discord --discord --phone-mic
+```
+
+Open the printed LAN URL on your phone. Use the speech button if the browser allows speech recognition, or type/dictate into the text box and send. Results still appear in the configured Discord text channel.
+
 Check Discord `.env` values before starting the bot:
 
 ```bash
