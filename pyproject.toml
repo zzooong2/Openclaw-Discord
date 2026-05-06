@@ -18,7 +18,13 @@ dependencies = [
 dev = [
   "pytest>=8.2.0",
 ]
+voice = [
+  "discord-ext-voice-recv==0.5.2a179",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.setuptools.packages.find]
+include = ["openclaw_discord*"]
