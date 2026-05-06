@@ -19,6 +19,7 @@ Discord server invite for reference: `https://discord.gg/VGySqE2y`
 | Variable | Default | Description |
 | --- | --- | --- |
 | `OPENCLAW_INPUT_BLOCK_MODE` | `simulate` | `simulate` logs blocked input; `real` blocks keyboard and mouse input |
+| `OPENCLAW_CONTROLLER_MODE` | `dry_run` | `dry_run` logs actions; `windows` performs Windows app, mouse, and keyboard actions |
 | `OPENCLAW_LOG_DIR` | `logs` | Directory for text and JSONL logs |
 | `OPENCLAW_MOUSE_STEP` | `120` | Default relative mouse movement in pixels |
 | `OPENCLAW_MOUSE_SMALL_STEP` | `30` | Small relative mouse movement in pixels |

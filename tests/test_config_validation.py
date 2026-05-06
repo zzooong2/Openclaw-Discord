@@ -12,6 +12,7 @@ def make_settings(**overrides):
         "log_dir": "logs",
         "input_block_mode": "simulate",
         "max_text_input_chars": 40,
+        "controller_mode": "dry_run",
     }
     values.update(overrides)
     return Settings(**values)
@@ -34,4 +35,3 @@ def test_validate_discord_settings_reports_non_numeric_ids():
         ConfigIssue("DISCORD_GUILD_ID", "Discord ID must be numeric."),
         ConfigIssue("DISCORD_VOICE_CHANNEL_ID", "Discord ID must be numeric."),
     ]
-

@@ -19,6 +19,7 @@ def test_settings_reads_required_values_from_environment(monkeypatch):
     assert settings.text_channel_id == "text-1"
     assert settings.log_dir == "custom-logs"
     assert settings.max_text_input_chars == 12
+    assert settings.controller_mode == "dry_run"
 
 
 def test_settings_uses_safe_console_defaults(monkeypatch):
@@ -31,3 +32,11 @@ def test_settings_uses_safe_console_defaults(monkeypatch):
     assert settings.owner_user_id == "console-owner"
     assert settings.log_dir == "logs"
     assert settings.input_block_mode == "simulate"
+
+
+def test_settings_reads_controller_mode(monkeypatch):
+    monkeypatch.setenv("OPENCLAW_CONTROLLER_MODE", "windows")
+
+    settings = Settings.from_env()
+
+    assert settings.controller_mode == "windows"

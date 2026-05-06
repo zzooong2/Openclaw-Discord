@@ -85,6 +85,8 @@ Check Discord `.env` values before starting the bot:
 python -m openclaw_discord --check-config
 ```
 
+By default, commands use `OPENCLAW_CONTROLLER_MODE=dry_run`. Set `OPENCLAW_CONTROLLER_MODE=windows` only when you are ready for the bot to perform real Windows app, mouse, and keyboard actions.
+
 Current Discord commands:
 
 - `/join`

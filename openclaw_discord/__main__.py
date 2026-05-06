@@ -4,7 +4,7 @@ import argparse
 
 from openclaw_discord.config import Settings
 from openclaw_discord.config_validation import validate_discord_settings
-from openclaw_discord.controllers import DryRunController
+from openclaw_discord.controller_factory import build_controller
 from openclaw_discord.core import CommandContext, OpenClawCore
 from openclaw_discord.discord_gateway import (
     DiscordBotTextNotifier,
@@ -46,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
 def build_core(settings: Settings, owner_user_id: str) -> OpenClawCore:
     return OpenClawCore(
         owner_user_id=owner_user_id,
-        controller=DryRunController(),
+        controller=build_controller(settings),
         logger=OpenClawLogger(settings.log_dir),
         input_blocker=SimulatedInputBlocker(),
     )
