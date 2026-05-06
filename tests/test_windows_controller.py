@@ -2,6 +2,7 @@ from openclaw_discord.commands import parse_command
 from openclaw_discord.windows_controller import (
     APP_COMMANDS,
     PyAutoGuiInputDriver,
+    SubprocessRunner,
     WindowsController,
 )
 
@@ -76,6 +77,19 @@ def test_closes_known_app():
     controller.execute(parse_command("메모장 닫아"))
 
     assert runner.closed == [APP_COMMANDS["notepad"].process_name]
+
+
+def test_subprocess_runner_force_closes_app(monkeypatch):
+    calls = []
+
+    def fake_run(command, *, check, capture_output):
+        calls.append((command, check, capture_output))
+
+    monkeypatch.setattr("openclaw_discord.windows_controller.subprocess.run", fake_run)
+
+    SubprocessRunner().close_app("CalculatorApp.exe")
+
+    assert calls == [(("taskkill", "/F", "/IM", "CalculatorApp.exe", "/T"), False, True)]
 
 
 def test_moves_mouse_by_default_step():

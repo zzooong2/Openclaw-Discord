@@ -57,7 +57,7 @@ class SubprocessRunner:
         subprocess.Popen(tuple(command))
 
     def close_app(self, process_name: str) -> None:
-        subprocess.run(("taskkill", "/IM", process_name, "/T"), check=False, capture_output=True)
+        subprocess.run(("taskkill", "/F", "/IM", process_name, "/T"), check=False, capture_output=True)
 
 
 class PyAutoGuiInputDriver:

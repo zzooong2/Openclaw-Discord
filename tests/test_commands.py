@@ -70,7 +70,15 @@ def test_understands_natural_app_close_request():
 
     assert command.kind is CommandKind.APP
     assert command.action == "close"
-    assert command.payload == {"target": "calculator", "requires_confirmation": True}
+    assert command.payload == {"target": "calculator"}
+
+
+def test_exact_app_close_command_does_not_require_confirmation():
+    command = parse_command("계산기 닫아")
+
+    assert command.kind is CommandKind.APP
+    assert command.action == "close"
+    assert command.payload == {"target": "calculator"}
 
 
 def test_understands_natural_mouse_move_request():

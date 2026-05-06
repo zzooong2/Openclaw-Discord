@@ -68,28 +68,37 @@ def test_routes_app_command_while_mode_is_on():
     assert controller.calls == [parse_command("메모장 열어")]
 
 
-def test_requires_confirmation_for_close_window():
+def test_closes_active_window_without_confirmation():
     controller = RecordedController()
     core = OpenClawCore(owner_user_id=OWNER_ID, controller=controller)
 
     handle(core, "클로 온")
-    pending = handle(core, "창 닫아")
-    confirmed = handle(core, "확인")
+    result = handle(core, "창 닫아")
 
-    assert pending.ok is False
-    assert pending.status == "pending_confirmation"
-    assert pending.message == "확인이 필요합니다: 창 닫아"
-    assert confirmed.ok is True
-    assert confirmed.message == "실행 완료: 창 닫아"
+    assert result.ok is True
+    assert result.status == "success"
+    assert result.message == "실행 완료: 창 닫아"
     assert controller.calls == [parse_command("창 닫아")]
 
 
-def test_cancel_clears_pending_confirmation():
+def test_closes_app_without_confirmation():
     controller = RecordedController()
     core = OpenClawCore(owner_user_id=OWNER_ID, controller=controller)
 
     handle(core, "클로 온")
-    handle(core, "창 닫아")
+    result = handle(core, "계산기 닫아")
+
+    assert result.ok is True
+    assert result.status == "success"
+    assert result.message == "실행 완료: 계산기 닫아"
+    assert controller.calls == [parse_command("계산기 닫아")]
+
+
+def test_cancel_without_pending_confirmation_is_harmless():
+    controller = RecordedController()
+    core = OpenClawCore(owner_user_id=OWNER_ID, controller=controller)
+
+    handle(core, "클로 온")
     result = handle(core, "취소")
 
     assert result.ok is True

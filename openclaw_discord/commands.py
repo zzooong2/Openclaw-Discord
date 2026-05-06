@@ -31,11 +31,11 @@ EXACT_COMMANDS: dict[str, Command] = {
     "계산기 열어": Command(CommandKind.APP, "open", {"target": "calculator"}),
     "크롬 열어": Command(CommandKind.APP, "open", {"target": "chrome"}),
     "파일 탐색기 열어": Command(CommandKind.APP, "open", {"target": "explorer"}),
-    "메모장 닫아": Command(CommandKind.APP, "close", {"target": "notepad", "requires_confirmation": True}),
-    "계산기 닫아": Command(CommandKind.APP, "close", {"target": "calculator", "requires_confirmation": True}),
-    "크롬 닫아": Command(CommandKind.APP, "close", {"target": "chrome", "requires_confirmation": True}),
-    "파일 탐색기 닫아": Command(CommandKind.APP, "close", {"target": "explorer", "requires_confirmation": True}),
-    "창 닫아": Command(CommandKind.APP, "close_active_window", {"requires_confirmation": True}),
+    "메모장 닫아": Command(CommandKind.APP, "close", {"target": "notepad"}),
+    "계산기 닫아": Command(CommandKind.APP, "close", {"target": "calculator"}),
+    "크롬 닫아": Command(CommandKind.APP, "close", {"target": "chrome"}),
+    "파일 탐색기 닫아": Command(CommandKind.APP, "close", {"target": "explorer"}),
+    "창 닫아": Command(CommandKind.APP, "close_active_window"),
     "마우스 위로": Command(CommandKind.MOUSE, "move_relative", {"dx": 0, "dy": -1, "step": "default"}),
     "마우스 아래로": Command(CommandKind.MOUSE, "move_relative", {"dx": 0, "dy": 1, "step": "default"}),
     "마우스 왼쪽으로": Command(CommandKind.MOUSE, "move_relative", {"dx": -1, "dy": 0, "step": "default"}),
@@ -148,11 +148,11 @@ def _parse_app(text: str) -> Command | None:
             break
     if target is None:
         if _has_any(text, ("창", "윈도우")) and _has_any(text, ("닫", "종료", "꺼")):
-            return Command(CommandKind.APP, "close_active_window", {"requires_confirmation": True}, text)
+            return Command(CommandKind.APP, "close_active_window", raw_text=text)
         return None
 
     if _has_any(text, ("닫", "종료", "꺼", "끄", "나가")):
-        return Command(CommandKind.APP, "close", {"target": target, "requires_confirmation": True}, text)
+        return Command(CommandKind.APP, "close", {"target": target}, text)
     if _has_any(text, ("열", "켜", "실행", "띄워", "보여")):
         return Command(CommandKind.APP, "open", {"target": target}, text)
     return None
