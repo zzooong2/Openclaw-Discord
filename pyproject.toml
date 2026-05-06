@@ -21,6 +21,7 @@ dev = [
 ]
 voice = [
   "discord-ext-voice-recv==0.5.2a179",
+  "SpeechRecognition>=3.10.0",
 ]
 
 [tool.pytest.ini_options]
