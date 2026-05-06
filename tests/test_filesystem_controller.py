@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from openclaw_discord.filesystem_controller import FolderNavigator
+from openclaw_discord.filesystem_controller import FolderNavigator, ReusingWindowsFolderRunner
 
 
 class FakeFolderRunner:
@@ -56,6 +56,24 @@ def test_folder_navigator_goes_to_parent_folder(tmp_path):
     assert runner.opened == [tmp_path.resolve()]
 
 
+def test_reusing_windows_folder_runner_reuses_existing_explorer_window(tmp_path):
+    shell = FakeShell([FakeExplorerWindow()])
+    runner = ReusingWindowsFolderRunner(shell_factory=lambda: shell, fallback_runner=FakeFolderRunner())
+
+    runner.open_folder(tmp_path)
+
+    assert shell.windows[0].navigated == [tmp_path.resolve().as_uri()]
+
+
+def test_reusing_windows_folder_runner_falls_back_when_no_explorer_window(tmp_path):
+    fallback = FakeFolderRunner()
+    runner = ReusingWindowsFolderRunner(shell_factory=lambda: FakeShell([]), fallback_runner=fallback)
+
+    runner.open_folder(tmp_path)
+
+    assert fallback.opened == [tmp_path.resolve()]
+
+
 def test_folder_navigator_rejects_missing_folder(tmp_path):
     navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
 
@@ -78,3 +96,26 @@ def test_folder_navigator_rejects_paths_outside_sandbox(tmp_path):
     assert result.ok is False
     assert result.message == f"허용된 루트 밖입니다: {outside.resolve()}"
     assert navigator.current_path == root.resolve()
+
+
+class FakeLocation:
+    def __init__(self, url="file:///C:/Users"):
+        self.URL = url
+
+
+class FakeExplorerWindow:
+    def __init__(self):
+        self.LocationURL = "file:///C:/Users"
+        self.Document = type("Document", (), {"Folder": type("Folder", (), {"Self": FakeLocation()})()})()
+        self.navigated = []
+
+    def Navigate(self, url):
+        self.navigated.append(url)
+
+
+class FakeShell:
+    def __init__(self, windows):
+        self.windows = windows
+
+    def Windows(self):
+        return self.windows

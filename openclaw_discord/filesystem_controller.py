@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, Sequence
+from typing import Callable, Protocol
 
 
 class FolderRunner(Protocol):
@@ -14,6 +14,55 @@ class FolderRunner(Protocol):
 class WindowsFolderRunner:
     def open_folder(self, path: Path) -> None:
         os.startfile(str(path))  # type: ignore[attr-defined]
+
+
+class ReusingWindowsFolderRunner:
+    def __init__(
+        self,
+        *,
+        shell_factory: Callable[[], object] | None = None,
+        fallback_runner: FolderRunner | None = None,
+    ) -> None:
+        self.shell_factory = shell_factory or self._create_shell
+        self.fallback_runner = fallback_runner or WindowsFolderRunner()
+
+    def open_folder(self, path: Path) -> None:
+        resolved = path.resolve()
+        window = self._find_explorer_window()
+        if window is None:
+            self.fallback_runner.open_folder(resolved)
+            return
+
+        window.Navigate(resolved.as_uri())
+
+    def _find_explorer_window(self) -> object | None:
+        try:
+            shell = self.shell_factory()
+            windows = shell.Windows()
+        except Exception:
+            return None
+
+        for window in windows:
+            if self._is_explorer_window(window):
+                return window
+        return None
+
+    @staticmethod
+    def _is_explorer_window(window: object) -> bool:
+        location_url = str(getattr(window, "LocationURL", ""))
+        if location_url.startswith("file:"):
+            return True
+        try:
+            folder_url = str(window.Document.Folder.Self.URL)
+        except Exception:
+            return False
+        return folder_url.startswith("file:")
+
+    @staticmethod
+    def _create_shell() -> object:
+        import win32com.client
+
+        return win32com.client.Dispatch("Shell.Application")
 
 
 @dataclass
@@ -33,7 +82,7 @@ class FolderNavigator:
     ) -> None:
         self.sandbox_root = sandbox_root.resolve() if sandbox_root is not None else None
         self.current_path = self._normalize(current_path or Path.home())
-        self.runner = runner or WindowsFolderRunner()
+        self.runner = runner or ReusingWindowsFolderRunner()
 
     def show_current(self) -> FolderActionResult:
         return FolderActionResult(True, f"현재 폴더: {self.current_path}", self.current_path)
