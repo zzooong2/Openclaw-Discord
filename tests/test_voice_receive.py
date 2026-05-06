@@ -13,6 +13,9 @@ class FakeVoiceClient:
         self.listened = []
         self.stopped = False
         self.disconnected = False
+        self.force_disconnect = None
+        self.connected = True
+        self.guild = None
 
     def listen(self, sink):
         self.listened.append(sink)
@@ -20,23 +23,34 @@ class FakeVoiceClient:
     def stop_listening(self):
         self.stopped = True
 
-    async def disconnect(self):
+    def is_connected(self):
+        return self.connected
+
+    async def disconnect(self, *, force=False):
         self.disconnected = True
+        self.force_disconnect = force
+        self.connected = False
 
 
 class FakeVoiceChannel:
-    def __init__(self, voice_client):
+    def __init__(self, voice_client, *, connect_error=None):
         self.voice_client = voice_client
         self.connected_with = []
+        self.connect_error = connect_error
+        self.guild = type("Guild", (), {"id": 456})()
+        self.voice_client.guild = self.guild
 
     async def connect(self, *, cls):
         self.connected_with.append(cls)
+        if self.connect_error is not None:
+            raise self.connect_error
         return self.voice_client
 
 
 class FakeBot:
-    def __init__(self, channel):
+    def __init__(self, channel, *, voice_clients=None):
         self.channel = channel
+        self.voice_clients = voice_clients or []
 
     def get_channel(self, channel_id):
         if channel_id == 123:
@@ -73,6 +87,62 @@ def test_voice_receive_connection_joins_with_voice_recv_client():
     asyncio.run(connection.join("123"))
 
     assert channel.connected_with == [FakeVoiceRecvModule.VoiceRecvClient]
+
+
+def test_voice_receive_connection_reuses_existing_connected_voice_client():
+    voice_client = FakeVoiceClient()
+    channel = FakeVoiceChannel(voice_client)
+    connection = VoiceReceiveConnection(
+        bot=FakeBot(channel, voice_clients=[voice_client]),
+        voice_recv=FakeVoiceRecvModule,
+    )
+
+    asyncio.run(connection.join("123"))
+
+    assert channel.connected_with == []
+    assert connection.voice_client is voice_client
+
+
+def test_voice_receive_connection_cleans_stale_voice_client_before_connecting():
+    stale_client = FakeVoiceClient()
+    stale_client.connected = False
+    fresh_client = FakeVoiceClient()
+    channel = FakeVoiceChannel(fresh_client)
+    stale_client.guild = channel.guild
+    connection = VoiceReceiveConnection(
+        bot=FakeBot(channel, voice_clients=[stale_client]),
+        voice_recv=FakeVoiceRecvModule,
+    )
+
+    asyncio.run(connection.join("123"))
+
+    assert stale_client.disconnected is True
+    assert stale_client.force_disconnect is True
+    assert channel.connected_with == [FakeVoiceRecvModule.VoiceRecvClient]
+    assert connection.voice_client is fresh_client
+
+
+def test_voice_receive_connection_cleans_stale_voice_client_after_connect_failure():
+    stale_client = FakeVoiceClient()
+    stale_client.connected = False
+    failure = RuntimeError("voice connect failed")
+    channel = FakeVoiceChannel(FakeVoiceClient(), connect_error=failure)
+    stale_client.guild = channel.guild
+    connection = VoiceReceiveConnection(
+        bot=FakeBot(channel, voice_clients=[stale_client]),
+        voice_recv=FakeVoiceRecvModule,
+    )
+
+    try:
+        asyncio.run(connection.join("123"))
+    except RuntimeError as exc:
+        assert exc is failure
+    else:
+        raise AssertionError("Expected voice connect failure")
+
+    assert stale_client.disconnected is True
+    assert stale_client.force_disconnect is True
+    assert connection.voice_client is None
 
 
 def test_voice_receive_connection_can_start_sink_after_join():

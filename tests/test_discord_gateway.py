@@ -40,24 +40,38 @@ class FakeTextNotifier:
 class FakeDiscordVoiceClient:
     def __init__(self):
         self.disconnected = False
+        self.force_disconnect = None
+        self.connected = True
+        self.guild = None
 
-    async def disconnect(self):
+    def is_connected(self):
+        return self.connected
+
+    async def disconnect(self, *, force=False):
         self.disconnected = True
+        self.force_disconnect = force
+        self.connected = False
 
 
 class FakeDiscordVoiceChannel:
-    def __init__(self):
+    def __init__(self, *, connect_error=None):
         self.connected = 0
         self.voice_client = FakeDiscordVoiceClient()
+        self.connect_error = connect_error
+        self.guild = type("Guild", (), {"id": 456})()
+        self.voice_client.guild = self.guild
 
     async def connect(self):
         self.connected += 1
+        if self.connect_error is not None:
+            raise self.connect_error
         return self.voice_client
 
 
 class FakeDiscordBot:
-    def __init__(self, channel):
+    def __init__(self, channel, *, voice_clients=None):
         self.channel = channel
+        self.voice_clients = voice_clients or []
 
     def get_channel(self, channel_id):
         if channel_id == 123:
@@ -186,6 +200,32 @@ def test_discord_bot_voice_connection_joins_channel():
     asyncio.run(connection.join("123"))
 
     assert channel.connected == 1
+
+
+def test_discord_bot_voice_connection_reuses_existing_connected_voice_client():
+    channel = FakeDiscordVoiceChannel()
+    voice_client = channel.voice_client
+    connection = DiscordBotVoiceConnection(bot=FakeDiscordBot(channel, voice_clients=[voice_client]))
+
+    asyncio.run(connection.join("123"))
+
+    assert channel.connected == 0
+    assert connection.voice_client is voice_client
+
+
+def test_discord_bot_voice_connection_cleans_stale_voice_client_before_connecting():
+    channel = FakeDiscordVoiceChannel()
+    stale_client = FakeDiscordVoiceClient()
+    stale_client.connected = False
+    stale_client.guild = channel.guild
+    connection = DiscordBotVoiceConnection(bot=FakeDiscordBot(channel, voice_clients=[stale_client]))
+
+    asyncio.run(connection.join("123"))
+
+    assert stale_client.disconnected is True
+    assert stale_client.force_disconnect is True
+    assert channel.connected == 1
+    assert connection.voice_client is channel.voice_client
 
 
 def test_discord_bot_voice_connection_leaves_current_channel():

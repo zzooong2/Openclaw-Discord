@@ -107,12 +107,65 @@ class DiscordBotVoiceConnection:
         if channel is None:
             raise ValueError(f"Discord voice channel not found: {channel_id}")
 
-        self.voice_client = await channel.connect()
+        existing_client = await self._prepare_existing_voice_client(channel)
+        if existing_client is not None:
+            self.voice_client = existing_client
+            return
+
+        try:
+            self.voice_client = await channel.connect()
+        except Exception:
+            await self._cleanup_stale_voice_client(channel)
+            self.voice_client = None
+            raise
 
     async def leave(self) -> None:
         if self.voice_client is not None:
             await self.voice_client.disconnect()
             self.voice_client = None
+
+    async def _prepare_existing_voice_client(self, channel: object) -> object | None:
+        existing_client = self._find_guild_voice_client(channel)
+        if existing_client is None:
+            return None
+        if self._is_connected(existing_client):
+            return existing_client
+
+        await self._disconnect(existing_client, force=True)
+        return None
+
+    async def _cleanup_stale_voice_client(self, channel: object) -> None:
+        existing_client = self._find_guild_voice_client(channel)
+        if existing_client is not None and not self._is_connected(existing_client):
+            await self._disconnect(existing_client, force=True)
+
+    def _find_guild_voice_client(self, channel: object) -> object | None:
+        if self.bot is None:
+            return None
+        guild_id = getattr(getattr(channel, "guild", None), "id", None)
+        if guild_id is None:
+            return None
+
+        for voice_client in getattr(self.bot, "voice_clients", []):
+            client_guild_id = getattr(getattr(voice_client, "guild", None), "id", None)
+            if client_guild_id == guild_id:
+                return voice_client
+        return None
+
+    @staticmethod
+    def _is_connected(voice_client: object) -> bool:
+        is_connected = getattr(voice_client, "is_connected", None)
+        if callable(is_connected):
+            return bool(is_connected())
+        return True
+
+    @staticmethod
+    async def _disconnect(voice_client: object, *, force: bool = False) -> None:
+        disconnect = getattr(voice_client, "disconnect")
+        try:
+            await disconnect(force=force)
+        except TypeError:
+            await disconnect()
 
 
 class DiscordBotTextNotifier:
