@@ -92,6 +92,7 @@ Current Discord commands:
 - `/join`
 - `/leave`
 - `/voice-mode off`
+- `/debug-speech text:<command>` for owner-only pipeline testing before real STT is enabled
 
 Discord voice receive is isolated behind an optional adapter. See `docs/voice-receive.md` before enabling real voice recognition.
 

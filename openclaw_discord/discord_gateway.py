@@ -71,13 +71,22 @@ class DiscordCommandService:
         result: CommandResult = self.core.handle_text("클로 오프", CommandContext(user_id=user_id))
         return await self._finish(DiscordServiceResult(result.ok, result.message))
 
+    async def debug_speech(self, user_id: str, text: str) -> DiscordServiceResult:
+        blocked = self._reject_if_not_owner(user_id)
+        if blocked is not None:
+            return blocked
+
+        result: CommandResult = self.core.handle_text(text, CommandContext(user_id=user_id))
+        return await self._finish(DiscordServiceResult(result.ok, result.message), notify_blocked=True)
+
     def _reject_if_not_owner(self, user_id: str) -> DiscordServiceResult | None:
         if user_id != self.owner_user_id:
             return DiscordServiceResult(False, "차단: 허용되지 않은 사용자입니다.")
         return None
 
-    async def _finish(self, result: DiscordServiceResult) -> DiscordServiceResult:
-        if result.ok and self.text_notifier is not None:
+    async def _finish(self, result: DiscordServiceResult, *, notify_blocked: bool = False) -> DiscordServiceResult:
+        should_notify = result.ok or notify_blocked
+        if should_notify and self.text_notifier is not None:
             await self.text_notifier.send(result.message)
         return result
 
@@ -136,6 +145,11 @@ def build_discord_bot(*, command_service: DiscordCommandService, guild_id: str) 
     @bot.tree.command(name="leave", description="Leave the current OpenClaw voice channel.", guild=guild)
     async def leave_command(interaction: discord.Interaction) -> None:
         result = await command_service.leave(str(interaction.user.id))
+        await respond(interaction, result)
+
+    @bot.tree.command(name="debug-speech", description="Process text as if it came from speech recognition.", guild=guild)
+    async def debug_speech_command(interaction: discord.Interaction, text: str) -> None:
+        result = await command_service.debug_speech(str(interaction.user.id), text)
         await respond(interaction, result)
 
     voice_mode_group = app_commands.Group(name="voice-mode", description="Control OpenClaw voice mode.", guild_ids=None)

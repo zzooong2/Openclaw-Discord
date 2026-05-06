@@ -140,6 +140,18 @@ def test_voice_mode_off_turns_core_and_blocker_off():
     assert notifier.messages == ["클로 모드가 꺼졌습니다."]
 
 
+def test_debug_speech_processes_text_like_recognized_voice():
+    service, core, blocker, _, notifier = build_service()
+
+    result = asyncio.run(service.debug_speech(OWNER_ID, "클로 온"))
+
+    assert result.ok is True
+    assert result.message == "클로 모드가 켜졌습니다."
+    assert core.voice_mode_enabled is True
+    assert blocker.enabled is True
+    assert notifier.messages == ["클로 모드가 켜졌습니다."]
+
+
 def test_rejects_non_owner_slash_commands():
     service, _, _, voice, notifier = build_service()
 
@@ -160,7 +172,7 @@ def test_build_discord_bot_exposes_required_command_names():
 
     bot = build_discord_bot(command_service=service, guild_id="guild-1")
 
-    assert sorted(command.name for command in bot.tree.get_commands()) == ["join", "leave", "voice-mode"]
+    assert sorted(command.name for command in bot.tree.get_commands()) == ["debug-speech", "join", "leave", "voice-mode"]
 
 
 def test_discord_bot_voice_connection_joins_channel():
