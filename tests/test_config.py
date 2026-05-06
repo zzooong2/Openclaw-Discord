@@ -1,0 +1,26 @@
+from openclaw_discord.config import Settings
+
+
+def test_settings_reads_required_values_from_environment(monkeypatch):
+    monkeypatch.setenv("DISCORD_OWNER_USER_ID", "owner-1")
+    monkeypatch.setenv("OPENCLAW_LOG_DIR", "custom-logs")
+    monkeypatch.setenv("OPENCLAW_MAX_TEXT_INPUT_CHARS", "12")
+
+    settings = Settings.from_env()
+
+    assert settings.owner_user_id == "owner-1"
+    assert settings.log_dir == "custom-logs"
+    assert settings.max_text_input_chars == 12
+
+
+def test_settings_uses_safe_console_defaults(monkeypatch):
+    monkeypatch.delenv("DISCORD_OWNER_USER_ID", raising=False)
+    monkeypatch.delenv("OPENCLAW_LOG_DIR", raising=False)
+    monkeypatch.delenv("OPENCLAW_INPUT_BLOCK_MODE", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.owner_user_id == "console-owner"
+    assert settings.log_dir == "logs"
+    assert settings.input_block_mode == "simulate"
+

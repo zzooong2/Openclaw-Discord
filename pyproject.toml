@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openclaw-discord"
+version = "0.1.0"
+description = "Discord voice control core for OpenClaw."
+requires-python = ">=3.11"
+dependencies = [
+  "python-dotenv>=1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
