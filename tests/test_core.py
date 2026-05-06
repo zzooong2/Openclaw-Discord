@@ -1,6 +1,7 @@
 from openclaw_discord.commands import parse_command
 from openclaw_discord.controllers import RecordedController
 from openclaw_discord.core import CommandContext, OpenClawCore
+from openclaw_discord.input_blocking import SimulatedInputBlocker
 
 
 OWNER_ID = "owner-1"
@@ -106,3 +107,14 @@ def test_logs_voice_command_and_result():
     assert [event.type for event in logger.events] == ["voice_command", "success"]
     assert logger.events[0].message == "클로 온"
     assert logger.events[1].message == "클로 모드가 켜졌습니다."
+
+
+def test_mode_on_and_off_controls_input_blocker():
+    blocker = SimulatedInputBlocker()
+    core = OpenClawCore(owner_user_id=OWNER_ID, controller=RecordedController(), input_blocker=blocker)
+
+    handle(core, "클로 온")
+    assert blocker.enabled is True
+
+    handle(core, "클로 오프")
+    assert blocker.enabled is False

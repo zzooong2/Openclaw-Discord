@@ -21,10 +21,18 @@ class CommandResult:
 
 
 class OpenClawCore:
-    def __init__(self, *, owner_user_id: str, controller: Controller, logger: object | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        owner_user_id: str,
+        controller: Controller,
+        logger: object | None = None,
+        input_blocker: object | None = None,
+    ) -> None:
         self.owner_user_id = owner_user_id
         self.controller = controller
         self.logger = logger
+        self.input_blocker = input_blocker
         self.voice_mode_enabled = False
         self._pending_confirmation: Command | None = None
 
@@ -55,6 +63,11 @@ class OpenClawCore:
     def _handle_mode(self, command: Command) -> CommandResult:
         enabled = bool(command.payload["enabled"])
         self.voice_mode_enabled = enabled
+        if self.input_blocker is not None:
+            if enabled:
+                self.input_blocker.enable()
+            else:
+                self.input_blocker.disable()
         if not enabled:
             self._pending_confirmation = None
         message = "클로 모드가 켜졌습니다." if enabled else "클로 모드가 꺼졌습니다."
