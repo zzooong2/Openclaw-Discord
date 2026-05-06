@@ -124,6 +124,8 @@ class DiscordBotTextNotifier:
         channel = self.bot.get_channel(int(self.text_channel_id))
         if channel is None:
             raise ValueError(f"Discord text channel not found: {self.text_channel_id}")
+        if not hasattr(channel, "send"):
+            raise TypeError(f"Discord text channel is not sendable: {self.text_channel_id}")
 
         await channel.send(message)
 

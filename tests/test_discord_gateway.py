@@ -86,6 +86,10 @@ class FakeDiscordTextChannel:
         self.messages.append(message)
 
 
+class FakeDiscordCategoryChannel:
+    pass
+
+
 def build_service():
     blocker = SimulatedInputBlocker()
     core = OpenClawCore(
@@ -201,6 +205,17 @@ def test_discord_bot_text_notifier_sends_to_configured_channel():
     asyncio.run(notifier.send("테스트 메시지"))
 
     assert channel.messages == ["테스트 메시지"]
+
+
+def test_discord_bot_text_notifier_rejects_non_text_channel():
+    notifier = DiscordBotTextNotifier(bot=FakeDiscordBot(FakeDiscordCategoryChannel()), text_channel_id="123")
+
+    try:
+        asyncio.run(notifier.send("테스트 메시지"))
+    except TypeError as exc:
+        assert str(exc) == "Discord text channel is not sendable: 123"
+    else:
+        raise AssertionError("Expected TypeError")
 
 
 def test_sync_application_commands_uses_configured_guild_id():

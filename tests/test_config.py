@@ -24,6 +24,7 @@ def test_settings_reads_required_values_from_environment(monkeypatch):
 
 
 def test_settings_uses_safe_console_defaults(monkeypatch):
+    monkeypatch.setattr("openclaw_discord.config.load_dotenv", lambda: None)
     monkeypatch.delenv("DISCORD_OWNER_USER_ID", raising=False)
     monkeypatch.delenv("OPENCLAW_LOG_DIR", raising=False)
     monkeypatch.delenv("OPENCLAW_INPUT_BLOCK_MODE", raising=False)
