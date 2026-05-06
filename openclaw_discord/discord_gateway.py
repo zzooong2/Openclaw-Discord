@@ -146,4 +146,14 @@ def build_discord_bot(*, command_service: DiscordCommandService, guild_id: str) 
         await respond(interaction, result)
 
     bot.tree.add_command(voice_mode_group, guild=guild)
+
+    @bot.event
+    async def on_ready() -> None:
+        await sync_application_commands(bot, guild_id)
+
     return bot
+
+
+async def sync_application_commands(bot: commands.Bot, guild_id: str) -> None:
+    guild = discord.Object(id=int(guild_id)) if guild_id.isdigit() else None
+    await bot.tree.sync(guild=guild)

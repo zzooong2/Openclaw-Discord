@@ -79,6 +79,12 @@ Discord slash-command mode:
 python -m openclaw_discord --discord
 ```
 
+Check Discord `.env` values before starting the bot:
+
+```bash
+python -m openclaw_discord --check-config
+```
+
 Current Discord commands:
 
 - `/join`

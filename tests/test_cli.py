@@ -19,3 +19,11 @@ def test_cli_accepts_discord_mode_flag():
     args = parser.parse_args(["--discord"])
 
     assert args.discord is True
+
+
+def test_cli_accepts_check_config_flag():
+    parser = build_parser()
+
+    args = parser.parse_args(["--check-config"])
+
+    assert args.check_config is True

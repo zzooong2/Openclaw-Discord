@@ -8,6 +8,7 @@ from openclaw_discord.discord_gateway import (
     DiscordCommandService,
     DiscordVoiceConnection,
     build_discord_bot,
+    sync_application_commands,
 )
 from openclaw_discord.input_blocking import SimulatedInputBlocker
 
@@ -62,6 +63,19 @@ class FakeDiscordBot:
         if channel_id == 123:
             return self.channel
         return None
+
+
+class FakeCommandTree:
+    def __init__(self):
+        self.synced_guilds = []
+
+    async def sync(self, *, guild=None):
+        self.synced_guilds.append(guild.id if guild else None)
+
+
+class FakeSyncBot:
+    def __init__(self):
+        self.tree = FakeCommandTree()
 
 
 class FakeDiscordTextChannel:
@@ -175,3 +189,11 @@ def test_discord_bot_text_notifier_sends_to_configured_channel():
     asyncio.run(notifier.send("테스트 메시지"))
 
     assert channel.messages == ["테스트 메시지"]
+
+
+def test_sync_application_commands_uses_configured_guild_id():
+    bot = FakeSyncBot()
+
+    asyncio.run(sync_application_commands(bot, "123"))
+
+    assert bot.tree.synced_guilds == [123]

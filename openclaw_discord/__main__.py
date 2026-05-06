@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 
 from openclaw_discord.config import Settings
+from openclaw_discord.config_validation import validate_discord_settings
 from openclaw_discord.controllers import DryRunController
 from openclaw_discord.core import CommandContext, OpenClawCore
 from openclaw_discord.discord_gateway import (
@@ -22,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Owner user id for console commands. Defaults to DISCORD_OWNER_USER_ID or console-owner.",
     )
     parser.add_argument("--discord", action="store_true", help="Run the Discord slash-command bot.")
+    parser.add_argument("--check-config", action="store_true", help="Validate Discord .env settings and exit.")
     return parser
 
 
@@ -30,6 +32,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     settings = Settings.from_env()
     owner_user_id = args.owner_user_id or settings.owner_user_id
+    if args.check_config:
+        return check_config(settings)
+
     if args.discord:
         run_discord(settings, owner_user_id)
         return 0
@@ -45,6 +50,18 @@ def build_core(settings: Settings, owner_user_id: str) -> OpenClawCore:
         logger=OpenClawLogger(settings.log_dir),
         input_blocker=SimulatedInputBlocker(),
     )
+
+
+def check_config(settings: Settings) -> int:
+    issues = validate_discord_settings(settings)
+    if not issues:
+        print("Discord configuration is ready.")
+        return 0
+
+    print("Discord configuration has issues:")
+    for issue in issues:
+        print(f"- {issue.variable}: {issue.message}")
+    return 1
 
 
 def run_console(settings: Settings, owner_user_id: str) -> int:
