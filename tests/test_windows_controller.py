@@ -45,6 +45,27 @@ class FakeInputDriver:
         self.calls.append(("type_text", text))
 
 
+class FakeFolderNavigator:
+    def __init__(self):
+        self.calls = []
+
+    def show_current(self):
+        self.calls.append(("show_current",))
+        return type("Result", (), {"ok": True, "message": "현재 폴더: C:\\work"})()
+
+    def open_current(self):
+        self.calls.append(("open_current",))
+        return type("Result", (), {"ok": True, "message": "폴더를 열었습니다: C:\\work"})()
+
+    def go_parent(self):
+        self.calls.append(("go_parent",))
+        return type("Result", (), {"ok": True, "message": "이동한 폴더: C:\\"})()
+
+    def go_to(self, target):
+        self.calls.append(("go_to", target))
+        return type("Result", (), {"ok": True, "message": f"이동한 폴더: {target}"})()
+
+
 class FakePyAutoGui:
     def __init__(self):
         self.calls = []
@@ -145,3 +166,17 @@ def test_pyautogui_input_driver_types_text_through_clipboard_paste():
 
     assert clipboard.copied == ["안녕하세요"]
     assert pyautogui.calls == [("hotkey", ("ctrl", "v"))]
+
+
+def test_executes_filesystem_command_and_returns_message():
+    folder_navigator = FakeFolderNavigator()
+    controller = WindowsController(
+        process_runner=FakeProcessRunner(),
+        input_driver=FakeInputDriver(),
+        folder_navigator=folder_navigator,
+    )
+
+    message = controller.execute(parse_command("다운로드 폴더로 들어가"))
+
+    assert message == "이동한 폴더: Downloads"
+    assert folder_navigator.calls == [("go_to", "Downloads")]

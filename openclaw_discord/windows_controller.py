@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol, Sequence
 
 from openclaw_discord.commands import Command, CommandKind
+from openclaw_discord.filesystem_controller import FolderNavigator
 
 
 @dataclass(frozen=True)
@@ -117,23 +118,28 @@ class WindowsController:
         *,
         process_runner: ProcessRunner,
         input_driver: InputDriver,
+        folder_navigator: FolderNavigator | None = None,
         default_step: int = 120,
         small_step: int = 30,
     ) -> None:
         self.process_runner = process_runner
         self.input_driver = input_driver
+        self.folder_navigator = folder_navigator or FolderNavigator()
         self.default_step = default_step
         self.small_step = small_step
 
-    def execute(self, command: Command) -> None:
+    def execute(self, command: Command) -> str | None:
         if command.kind is CommandKind.APP:
             self._execute_app(command)
         elif command.kind is CommandKind.MOUSE:
             self._execute_mouse(command)
         elif command.kind is CommandKind.KEYBOARD:
             self._execute_keyboard(command)
+        elif command.kind is CommandKind.FILESYSTEM:
+            return self._execute_filesystem(command)
         else:
             raise ValueError(f"Unsupported command kind: {command.kind.value}")
+        return None
 
     def _execute_app(self, command: Command) -> None:
         if command.action == "close_active_window":
@@ -170,3 +176,19 @@ class WindowsController:
             self.input_driver.type_text(command.payload["text"])
         else:
             raise ValueError(f"Unsupported keyboard action: {command.action}")
+
+    def _execute_filesystem(self, command: Command) -> str:
+        if command.action == "show_current":
+            result = self.folder_navigator.show_current()
+        elif command.action == "open_current":
+            result = self.folder_navigator.open_current()
+        elif command.action == "go_parent":
+            result = self.folder_navigator.go_parent()
+        elif command.action == "go_to":
+            result = self.folder_navigator.go_to(command.payload["target"])
+        else:
+            raise ValueError(f"Unsupported filesystem action: {command.action}")
+
+        if not result.ok:
+            raise ValueError(result.message)
+        return result.message

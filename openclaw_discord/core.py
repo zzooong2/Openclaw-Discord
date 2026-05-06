@@ -86,8 +86,9 @@ class OpenClawCore:
         return self._execute(pending)
 
     def _execute(self, command: Command) -> CommandResult:
-        self.controller.execute(command)
-        return CommandResult(True, "success", f"실행 완료: {command.raw_text}", command)
+        detail = self.controller.execute(command)
+        message = detail or f"실행 완료: {command.raw_text}"
+        return CommandResult(True, "success", message, command)
 
     @staticmethod
     def _blocked(command: Command, reason: str) -> CommandResult:

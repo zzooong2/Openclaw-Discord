@@ -14,6 +14,7 @@ def make_settings(**overrides):
         "max_text_input_chars": 40,
         "controller_mode": "dry_run",
         "enable_voice_receive": False,
+        "sandbox_root": "",
     }
     values.update(overrides)
     return Settings(**values)

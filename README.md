@@ -27,16 +27,17 @@ bot: 클로 모드가 켜졌습니다.
 bot: 실행 완료: 브라우저 좀 켜줘
 
 김현종: 계산기 좀 종료해줘
-bot: 확인이 필요합니다: 계산기 좀 종료해줘
-
-김현종: 확인
 bot: 실행 완료: 계산기 좀 종료해줘
+
+김현종: 다운로드 폴더로 들어가
+bot: 이동한 폴더: C:\Users\이안\Downloads
 ```
 
 ## Supported Intent Groups
 
 - Mode: turn OpenClaw control on or off.
 - Apps: open or close Notepad, Calculator, Chrome, and File Explorer.
+- Folders: show, open, enter, and move up from the current folder.
 - Mouse: move, position, left click, right click, double click.
 - Keyboard: Enter, Escape, common shortcuts, and short text input.
 - Confirmation: confirm or cancel pending risky commands.
@@ -61,6 +62,12 @@ Optional voice fields from `rev0.0` can stay empty for `rev0.1`:
 ```dotenv
 DISCORD_VOICE_CHANNEL_ID=
 OPENCLAW_ENABLE_VOICE_RECEIVE=false
+```
+
+Folder navigation is unrestricted by default. Set this later to keep navigation inside one root folder:
+
+```dotenv
+OPENCLAW_SANDBOX_ROOT=C:\Users\이안\Desktop
 ```
 
 Set real PC control only when you are ready:

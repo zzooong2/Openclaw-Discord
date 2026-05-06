@@ -16,6 +16,7 @@ def make_settings(controller_mode):
         max_text_input_chars=40,
         controller_mode=controller_mode,
         enable_voice_receive=False,
+        sandbox_root="",
     )
 
 

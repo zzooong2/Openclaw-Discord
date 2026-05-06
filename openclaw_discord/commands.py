@@ -8,6 +8,7 @@ from typing import Any
 class CommandKind(str, Enum):
     MODE = "mode"
     APP = "app"
+    FILESYSTEM = "filesystem"
     MOUSE = "mouse"
     KEYBOARD = "keyboard"
     CONFIRMATION = "confirmation"
@@ -31,6 +32,9 @@ EXACT_COMMANDS: dict[str, Command] = {
     "계산기 열어": Command(CommandKind.APP, "open", {"target": "calculator"}),
     "크롬 열어": Command(CommandKind.APP, "open", {"target": "chrome"}),
     "파일 탐색기 열어": Command(CommandKind.APP, "open", {"target": "explorer"}),
+    "폴더 열어": Command(CommandKind.FILESYSTEM, "open_current"),
+    "현재 폴더 보여줘": Command(CommandKind.FILESYSTEM, "show_current"),
+    "상위 폴더로 가": Command(CommandKind.FILESYSTEM, "go_parent"),
     "메모장 닫아": Command(CommandKind.APP, "close", {"target": "notepad"}),
     "계산기 닫아": Command(CommandKind.APP, "close", {"target": "calculator"}),
     "크롬 닫아": Command(CommandKind.APP, "close", {"target": "chrome"}),
@@ -99,6 +103,10 @@ def _parse_natural_command(text: str, *, max_text_input_chars: int) -> Command |
     if app is not None:
         return app
 
+    filesystem = _parse_filesystem(text)
+    if filesystem is not None:
+        return filesystem
+
     mouse = _parse_mouse(text)
     if mouse is not None:
         return mouse
@@ -107,6 +115,50 @@ def _parse_natural_command(text: str, *, max_text_input_chars: int) -> Command |
     if keyboard is not None:
         return keyboard
 
+    return None
+
+
+KNOWN_FOLDERS: dict[str, str] = {
+    "바탕화면": "Desktop",
+    "데스크탑": "Desktop",
+    "다운로드": "Downloads",
+    "문서": "Documents",
+    "사진": "Pictures",
+    "그림": "Pictures",
+    "동영상": "Videos",
+    "음악": "Music",
+    "프로젝트": "project",
+}
+
+
+def _parse_filesystem(text: str) -> Command | None:
+    if not _has_any(text, ("폴더", "디렉터리", "디렉토리", "탐색기")):
+        return None
+
+    if _has_any(text, ("현재", "어디", "위치", "보여", "알려")):
+        return Command(CommandKind.FILESYSTEM, "show_current", raw_text=text)
+    if _has_any(text, ("상위", "위로", "뒤로", "부모")):
+        return Command(CommandKind.FILESYSTEM, "go_parent", raw_text=text)
+    if _has_any(text, ("열어", "보여", "띄워")) and not _has_any(text, ("들어", "이동", "가")):
+        return Command(CommandKind.FILESYSTEM, "open_current", raw_text=text)
+
+    target = _extract_folder_target(text)
+    if target and _has_any(text, ("들어", "이동", "가", "열어", "보여")):
+        return Command(CommandKind.FILESYSTEM, "go_to", {"target": target}, text)
+    return None
+
+
+def _extract_folder_target(text: str) -> str | None:
+    for korean_name, folder_name in KNOWN_FOLDERS.items():
+        if korean_name in text:
+            return folder_name
+
+    markers = ("폴더로", "폴더에", "폴더 들어", "폴더 열", "폴더 이동")
+    for marker in markers:
+        if marker in text:
+            candidate = text.split(marker, 1)[0].strip()
+            if candidate:
+                return candidate.split()[-1]
     return None
 
 

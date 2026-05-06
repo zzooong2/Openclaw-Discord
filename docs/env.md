@@ -21,6 +21,7 @@ Discord server invite for reference: `https://discord.gg/VGySqE2y`
 | `OPENCLAW_CONTROLLER_MODE` | `dry_run` | `dry_run` logs actions; `windows` performs Windows app, mouse, and keyboard actions |
 | `OPENCLAW_ENABLE_VOICE_RECEIVE` | `false` | `true` enables experimental Discord voice receive and STT sink wiring |
 | `DISCORD_VOICE_CHANNEL_ID` | empty | Optional. Required only when `OPENCLAW_ENABLE_VOICE_RECEIVE=true` or `/join` is used |
+| `OPENCLAW_SANDBOX_ROOT` | empty | Optional folder root for file navigation. Empty allows normal filesystem navigation |
 | `OPENCLAW_LOG_DIR` | `logs` | Directory for text and JSONL logs |
 | `OPENCLAW_MOUSE_STEP` | `120` | Default relative mouse movement in pixels |
 | `OPENCLAW_MOUSE_SMALL_STEP` | `30` | Small relative mouse movement in pixels |
@@ -45,6 +46,7 @@ DISCORD_TEXT_CHANNEL_ID=123456789012345678
 DISCORD_VOICE_CHANNEL_ID=
 
 OPENCLAW_INPUT_BLOCK_MODE=simulate
+OPENCLAW_SANDBOX_ROOT=
 OPENCLAW_LOG_DIR=logs
 OPENCLAW_MOUSE_STEP=120
 OPENCLAW_MOUSE_SMALL_STEP=30

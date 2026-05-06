@@ -55,6 +55,7 @@ def test_build_core_uses_configured_controller_mode():
         max_text_input_chars=40,
         controller_mode="dry_run",
         enable_voice_receive=False,
+        sandbox_root="",
     )
 
     core = build_core(settings, "owner")
@@ -74,6 +75,7 @@ def test_build_voice_connection_defaults_to_standard_discord_voice():
         max_text_input_chars=40,
         controller_mode="dry_run",
         enable_voice_receive=False,
+        sandbox_root="",
     )
 
     connection = build_voice_connection(settings, bot=None, pipeline=None)
@@ -93,6 +95,7 @@ def test_build_voice_connection_uses_receive_adapter_when_enabled():
         max_text_input_chars=40,
         controller_mode="dry_run",
         enable_voice_receive=True,
+        sandbox_root="",
     )
 
     connection = build_voice_connection(settings, bot=None, pipeline=object())

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from openclaw_discord.config import Settings
 from openclaw_discord.controllers import Controller, DryRunController
+from openclaw_discord.filesystem_controller import FolderNavigator
 from openclaw_discord.windows_controller import (
     InputDriver,
     ProcessRunner,
@@ -24,7 +27,9 @@ def build_controller(
         return WindowsController(
             process_runner=process_runner or SubprocessRunner(),
             input_driver=input_driver or PyAutoGuiInputDriver(),
+            folder_navigator=FolderNavigator(
+                sandbox_root=Path(settings.sandbox_root) if settings.sandbox_root else None,
+            ),
         )
 
     raise ValueError(f"Unsupported controller mode: {settings.controller_mode}")
-
