@@ -127,6 +127,7 @@ KNOWN_FOLDERS: dict[str, str] = {
     "그림": "Pictures",
     "동영상": "Videos",
     "음악": "Music",
+    "검색": "Searches",
     "프로젝트": "project",
 }
 

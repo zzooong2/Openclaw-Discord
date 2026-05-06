@@ -126,6 +126,14 @@ def test_parses_go_to_named_folder_request():
     assert command.payload == {"target": "Downloads"}
 
 
+def test_parses_go_to_searches_folder_request():
+    command = parse_command("검색 폴더로 가줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "go_to"
+    assert command.payload == {"target": "Searches"}
+
+
 def test_rejects_unknown_natural_request():
     command = parse_command("오늘 날씨 알려줘")
 
