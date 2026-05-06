@@ -114,7 +114,8 @@ def run_discord(settings: Settings, owner_user_id: str) -> None:
 
 def build_voice_connection(settings: Settings, *, bot: object | None, pipeline: object | None) -> object:
     if settings.enable_voice_receive:
-        return VoiceReceiveConnection(bot=bot, pipeline=pipeline)
+        text_notifier = DiscordBotTextNotifier(bot=bot, text_channel_id=settings.text_channel_id)
+        return VoiceReceiveConnection(bot=bot, pipeline=pipeline, text_notifier=text_notifier)
 
     return DiscordBotVoiceConnection(bot=bot)
 

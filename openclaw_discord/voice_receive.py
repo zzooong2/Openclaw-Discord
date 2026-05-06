@@ -7,6 +7,7 @@ from discord.ext import commands
 from openclaw_discord.speech_bridge import ThreadSafeSpeechBridge
 from openclaw_discord.speech_pipeline import SpeechCommandPipeline
 from openclaw_discord.speech_sink_factory import SpeechRecognitionSinkFactory
+from openclaw_discord.discord_gateway import DiscordTextNotifier
 
 
 class VoiceReceiveConnection:
@@ -16,11 +17,13 @@ class VoiceReceiveConnection:
         bot: commands.Bot,
         voice_recv: Any | None = None,
         pipeline: SpeechCommandPipeline | None = None,
+        text_notifier: DiscordTextNotifier | None = None,
         sink_factory_class: type[SpeechRecognitionSinkFactory] = SpeechRecognitionSinkFactory,
     ) -> None:
         self.bot = bot
         self.voice_recv = voice_recv or self._import_voice_recv()
         self.pipeline = pipeline
+        self.text_notifier = text_notifier
         self.sink_factory_class = sink_factory_class
         self.voice_client: Any | None = None
 
@@ -34,8 +37,10 @@ class VoiceReceiveConnection:
             import asyncio
 
             bridge = ThreadSafeSpeechBridge(loop=asyncio.get_running_loop(), pipeline=self.pipeline)
-            sink = self.sink_factory_class(bridge=bridge).create()
+            sink = self.sink_factory_class(bridge=bridge, text_notifier=self.text_notifier).create()
             self.listen(sink)
+            if self.text_notifier is not None:
+                await self.text_notifier.send("음성 수신을 시작했습니다.")
 
     def listen(self, sink: object) -> None:
         if self.voice_client is None:

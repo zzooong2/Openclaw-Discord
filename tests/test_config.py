@@ -2,6 +2,7 @@ from openclaw_discord.config import Settings
 
 
 def test_settings_reads_required_values_from_environment(monkeypatch):
+    monkeypatch.setattr("openclaw_discord.config.load_dotenv", lambda: None)
     monkeypatch.setenv("DISCORD_BOT_TOKEN", "token-1")
     monkeypatch.setenv("DISCORD_GUILD_ID", "guild-1")
     monkeypatch.setenv("DISCORD_OWNER_USER_ID", "owner-1")
@@ -9,6 +10,7 @@ def test_settings_reads_required_values_from_environment(monkeypatch):
     monkeypatch.setenv("DISCORD_TEXT_CHANNEL_ID", "text-1")
     monkeypatch.setenv("OPENCLAW_LOG_DIR", "custom-logs")
     monkeypatch.setenv("OPENCLAW_MAX_TEXT_INPUT_CHARS", "12")
+    monkeypatch.delenv("OPENCLAW_ENABLE_VOICE_RECEIVE", raising=False)
 
     settings = Settings.from_env()
 

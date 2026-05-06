@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+import asyncio
+
+from openclaw_discord.discord_gateway import DiscordTextNotifier
 from openclaw_discord.speech_bridge import ThreadSafeSpeechBridge
 
 
@@ -10,17 +13,21 @@ class SpeechRecognitionSinkFactory:
         self,
         *,
         bridge: ThreadSafeSpeechBridge,
+        text_notifier: DiscordTextNotifier | None = None,
         speech_recognition_module: Any | None = None,
         recognizer_name: str = "google",
         phrase_time_limit: int = 3,
     ) -> None:
         self.bridge = bridge
+        self.text_notifier = text_notifier
         self.speech_recognition_module = speech_recognition_module or self._import_speech_recognition_module()
         self.recognizer_name = recognizer_name
         self.phrase_time_limit = phrase_time_limit
 
     def create(self) -> object:
         def text_cb(user: object, text: str) -> None:
+            if self.text_notifier is not None:
+                asyncio.run_coroutine_threadsafe(self.text_notifier.send(f"음성 인식: {text}"), self.bridge.loop)
             self.bridge.submit(text, user_id=str(user.id))
 
         return self.speech_recognition_module.SpeechRecognitionSink(
@@ -40,4 +47,3 @@ class SpeechRecognitionSinkFactory:
             ) from exc
 
         return speechrecognition
-

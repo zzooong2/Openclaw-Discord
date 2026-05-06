@@ -1,3 +1,5 @@
+import asyncio
+
 from openclaw_discord.speech_sink_factory import SpeechRecognitionSinkFactory
 
 
@@ -6,11 +8,20 @@ class FakeUser:
 
 
 class FakeBridge:
-    def __init__(self):
+    def __init__(self, loop=None):
         self.submissions = []
+        self.loop = loop
 
     def submit(self, text, *, user_id):
         self.submissions.append((text, user_id))
+
+
+class FakeNotifier:
+    def __init__(self):
+        self.messages = []
+
+    async def send(self, message):
+        self.messages.append(message)
 
 
 class FakeSpeechRecognitionSink:
@@ -40,3 +51,21 @@ def test_factory_creates_sink_that_submits_recognized_text_to_bridge():
     assert sink.phrase_time_limit == 3
     assert bridge.submissions == [("클로 온", "123")]
 
+
+def test_factory_notifies_recognized_text_when_notifier_is_configured():
+    async def scenario():
+        bridge = FakeBridge(loop=asyncio.get_running_loop())
+        notifier = FakeNotifier()
+        factory = SpeechRecognitionSinkFactory(
+            bridge=bridge,
+            text_notifier=notifier,
+            speech_recognition_module=FakeSpeechRecognitionModule,
+        )
+
+        sink = factory.create()
+        sink.text_cb(FakeUser(), "클로 온")
+        await asyncio.sleep(0.01)
+
+        assert notifier.messages == ["음성 인식: 클로 온"]
+
+    asyncio.run(scenario())
