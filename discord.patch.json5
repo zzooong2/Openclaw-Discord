@@ -1,0 +1,9 @@
+﻿{
+  channels: {
+    discord: {
+      enabled: true,
+      groupPolicy: "allowlist",
+      token: { source: "env", provider: "default", id: "DISCORD_BOT_TOKEN" },
+    },
+  },
+}
