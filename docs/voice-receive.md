@@ -4,7 +4,7 @@
 
 The planned adapter is `discord-ext-voice-recv`. Its README describes `VoiceRecvClient` as the voice client class to pass to `VoiceChannel.connect()`, and exposes `listen(sink)` / `stop_listening()` on the resulting voice client. The same README warns that the extension is not feature complete and does not guarantee stability, so OpenClaw keeps it behind `openclaw_discord.voice_receive.VoiceReceiveConnection`.
 
-Install the optional receive/STT dependency when starting real Discord voice recognition work:
+Install the optional receive/STT dependency when starting real Discord voice recognition work. The receive extension is installed from its GitHub main branch because the PyPI build predates Discord's 2026 DAVE voice changes:
 
 ```bash
 python -m pip install .[voice]

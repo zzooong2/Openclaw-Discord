@@ -20,7 +20,7 @@ dev = [
   "pytest>=8.2.0",
 ]
 voice = [
-  "discord-ext-voice-recv==0.5.2a179",
+  "discord-ext-voice-recv @ git+https://github.com/imayhaveborkedit/discord-ext-voice-recv@ac04ea7b0941112e83767cf1c1469b408fa06748",
   "SpeechRecognition>=3.10.0",
 ]
 
