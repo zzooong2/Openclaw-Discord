@@ -33,7 +33,10 @@ class ReusingWindowsFolderRunner:
             self.fallback_runner.open_folder(resolved)
             return
 
-        window.Navigate(resolved.as_uri())
+        try:
+            window.Navigate(str(resolved))
+        except Exception:
+            self.fallback_runner.open_folder(resolved)
 
     def _find_explorer_window(self) -> object | None:
         try:

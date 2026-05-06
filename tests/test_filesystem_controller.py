@@ -62,12 +62,22 @@ def test_reusing_windows_folder_runner_reuses_existing_explorer_window(tmp_path)
 
     runner.open_folder(tmp_path)
 
-    assert shell.windows[0].navigated == [tmp_path.resolve().as_uri()]
+    assert shell.windows[0].navigated == [str(tmp_path.resolve())]
 
 
 def test_reusing_windows_folder_runner_falls_back_when_no_explorer_window(tmp_path):
     fallback = FakeFolderRunner()
     runner = ReusingWindowsFolderRunner(shell_factory=lambda: FakeShell([]), fallback_runner=fallback)
+
+    runner.open_folder(tmp_path)
+
+    assert fallback.opened == [tmp_path.resolve()]
+
+
+def test_reusing_windows_folder_runner_falls_back_when_navigation_fails(tmp_path):
+    fallback = FakeFolderRunner()
+    shell = FakeShell([FakeExplorerWindow(navigate_error=RuntimeError("boom"))])
+    runner = ReusingWindowsFolderRunner(shell_factory=lambda: shell, fallback_runner=fallback)
 
     runner.open_folder(tmp_path)
 
@@ -104,12 +114,15 @@ class FakeLocation:
 
 
 class FakeExplorerWindow:
-    def __init__(self):
+    def __init__(self, *, navigate_error=None):
         self.LocationURL = "file:///C:/Users"
         self.Document = type("Document", (), {"Folder": type("Folder", (), {"Self": FakeLocation()})()})()
         self.navigated = []
+        self.navigate_error = navigate_error
 
     def Navigate(self, url):
+        if self.navigate_error is not None:
+            raise self.navigate_error
         self.navigated.append(url)
 
 
