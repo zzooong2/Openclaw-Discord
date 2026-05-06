@@ -4,11 +4,24 @@ from typing import Any
 
 from discord.ext import commands
 
+from openclaw_discord.speech_bridge import ThreadSafeSpeechBridge
+from openclaw_discord.speech_pipeline import SpeechCommandPipeline
+from openclaw_discord.speech_sink_factory import SpeechRecognitionSinkFactory
+
 
 class VoiceReceiveConnection:
-    def __init__(self, *, bot: commands.Bot, voice_recv: Any | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        bot: commands.Bot,
+        voice_recv: Any | None = None,
+        pipeline: SpeechCommandPipeline | None = None,
+        sink_factory_class: type[SpeechRecognitionSinkFactory] = SpeechRecognitionSinkFactory,
+    ) -> None:
         self.bot = bot
         self.voice_recv = voice_recv or self._import_voice_recv()
+        self.pipeline = pipeline
+        self.sink_factory_class = sink_factory_class
         self.voice_client: Any | None = None
 
     async def join(self, channel_id: str) -> None:
@@ -17,6 +30,12 @@ class VoiceReceiveConnection:
             raise ValueError(f"Discord voice channel not found: {channel_id}")
 
         self.voice_client = await channel.connect(cls=self.voice_recv.VoiceRecvClient)
+        if self.pipeline is not None:
+            import asyncio
+
+            bridge = ThreadSafeSpeechBridge(loop=asyncio.get_running_loop(), pipeline=self.pipeline)
+            sink = self.sink_factory_class(bridge=bridge).create()
+            self.listen(sink)
 
     def listen(self, sink: object) -> None:
         if self.voice_client is None:
@@ -44,4 +63,3 @@ class VoiceReceiveConnection:
             ) from exc
 
         return voice_recv
-

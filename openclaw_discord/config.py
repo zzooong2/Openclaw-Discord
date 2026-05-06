@@ -17,6 +17,7 @@ class Settings:
     input_block_mode: str
     max_text_input_chars: int
     controller_mode: str
+    enable_voice_receive: bool
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -31,4 +32,5 @@ class Settings:
             input_block_mode=os.getenv("OPENCLAW_INPUT_BLOCK_MODE", "simulate"),
             max_text_input_chars=int(os.getenv("OPENCLAW_MAX_TEXT_INPUT_CHARS", "40")),
             controller_mode=os.getenv("OPENCLAW_CONTROLLER_MODE", "dry_run"),
+            enable_voice_receive=os.getenv("OPENCLAW_ENABLE_VOICE_RECEIVE", "false").lower() == "true",
         )

@@ -10,6 +10,12 @@ Install the optional receive/STT dependency when starting real Discord voice rec
 python -m pip install .[voice]
 ```
 
+Then set:
+
+```dotenv
+OPENCLAW_ENABLE_VOICE_RECEIVE=true
+```
+
 The first STT sink uses `discord.ext.voice_recv.extras.speechrecognition.SpeechRecognitionSink` with the `google` recognizer. That gives us a fast Korean-capable prototype, but it still depends on a third-party speech service. The code keeps this behind `SpeechRecognitionSinkFactory` so the recognizer can be swapped later.
 
 References:

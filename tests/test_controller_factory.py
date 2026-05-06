@@ -15,6 +15,7 @@ def make_settings(controller_mode):
         input_block_mode="simulate",
         max_text_input_chars=40,
         controller_mode=controller_mode,
+        enable_voice_receive=False,
     )
 
 

@@ -44,6 +44,18 @@ class FakeBot:
         return None
 
 
+class FakePipeline:
+    pass
+
+
+class FakeSinkFactory:
+    def __init__(self, *, bridge):
+        self.bridge = bridge
+
+    def create(self):
+        return "sink"
+
+
 def test_voice_receive_connection_joins_with_voice_recv_client():
     voice_client = FakeVoiceClient()
     channel = FakeVoiceChannel(voice_client)
@@ -52,6 +64,21 @@ def test_voice_receive_connection_joins_with_voice_recv_client():
     asyncio.run(connection.join("123"))
 
     assert channel.connected_with == [FakeVoiceRecvModule.VoiceRecvClient]
+
+
+def test_voice_receive_connection_can_start_sink_after_join():
+    voice_client = FakeVoiceClient()
+    channel = FakeVoiceChannel(voice_client)
+    connection = VoiceReceiveConnection(
+        bot=FakeBot(channel),
+        voice_recv=FakeVoiceRecvModule,
+        pipeline=FakePipeline(),
+        sink_factory_class=FakeSinkFactory,
+    )
+
+    asyncio.run(connection.join("123"))
+
+    assert voice_client.listened == ["sink"]
 
 
 def test_voice_receive_connection_starts_and_stops_listening():
@@ -77,4 +104,3 @@ def test_voice_receive_connection_leaves_channel():
     asyncio.run(connection.leave())
 
     assert voice_client.disconnected is True
-

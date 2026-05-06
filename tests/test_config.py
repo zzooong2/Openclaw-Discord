@@ -20,6 +20,7 @@ def test_settings_reads_required_values_from_environment(monkeypatch):
     assert settings.log_dir == "custom-logs"
     assert settings.max_text_input_chars == 12
     assert settings.controller_mode == "dry_run"
+    assert settings.enable_voice_receive is False
 
 
 def test_settings_uses_safe_console_defaults(monkeypatch):
@@ -40,3 +41,11 @@ def test_settings_reads_controller_mode(monkeypatch):
     settings = Settings.from_env()
 
     assert settings.controller_mode == "windows"
+
+
+def test_settings_reads_voice_receive_flag(monkeypatch):
+    monkeypatch.setenv("OPENCLAW_ENABLE_VOICE_RECEIVE", "true")
+
+    settings = Settings.from_env()
+
+    assert settings.enable_voice_receive is True

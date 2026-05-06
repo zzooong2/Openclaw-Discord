@@ -13,6 +13,7 @@ def make_settings(**overrides):
         "input_block_mode": "simulate",
         "max_text_input_chars": 40,
         "controller_mode": "dry_run",
+        "enable_voice_receive": False,
     }
     values.update(overrides)
     return Settings(**values)

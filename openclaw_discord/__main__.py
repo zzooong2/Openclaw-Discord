@@ -14,6 +14,8 @@ from openclaw_discord.discord_gateway import (
 )
 from openclaw_discord.input_blocking import SimulatedInputBlocker
 from openclaw_discord.logging import OpenClawLogger
+from openclaw_discord.speech_pipeline import SpeechCommandPipeline
+from openclaw_discord.voice_receive import VoiceReceiveConnection
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -103,9 +105,18 @@ def run_discord(settings: Settings, owner_user_id: str) -> None:
         voice_connection=voice_connection,
     )
     bot = build_discord_bot(command_service=service, guild_id=settings.guild_id)
-    voice_connection.set_bot(bot)
     service.text_notifier = DiscordBotTextNotifier(bot=bot, text_channel_id=settings.text_channel_id)
+    pipeline = SpeechCommandPipeline(core=core, text_notifier=service.text_notifier)
+    voice_connection = build_voice_connection(settings, bot=bot, pipeline=pipeline)
+    service.voice_connection = voice_connection
     bot.run(settings.discord_bot_token)
+
+
+def build_voice_connection(settings: Settings, *, bot: object | None, pipeline: object | None) -> object:
+    if settings.enable_voice_receive:
+        return VoiceReceiveConnection(bot=bot, pipeline=pipeline)
+
+    return DiscordBotVoiceConnection(bot=bot)
 
 
 if __name__ == "__main__":
