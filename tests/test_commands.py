@@ -126,6 +126,22 @@ def test_parses_go_to_named_folder_request():
     assert command.payload == {"target": "Downloads"}
 
 
+def test_parses_open_named_folder_request():
+    command = parse_command("다운로드폴더 열어줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "go_to"
+    assert command.payload == {"target": "Downloads"}
+
+
+def test_parses_open_named_folder_with_explorer_request():
+    command = parse_command("다운로드 경로의 탐색기를 열어줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "go_to"
+    assert command.payload == {"target": "Downloads"}
+
+
 def test_parses_go_to_searches_folder_request():
     command = parse_command("검색 폴더로 가줘")
 

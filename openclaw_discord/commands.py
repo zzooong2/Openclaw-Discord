@@ -99,13 +99,13 @@ def _parse_natural_command(text: str, *, max_text_input_chars: int) -> Command |
     if confirmation is not None:
         return confirmation
 
-    app = _parse_app(text)
-    if app is not None:
-        return app
-
     filesystem = _parse_filesystem(text)
     if filesystem is not None:
         return filesystem
+
+    app = _parse_app(text)
+    if app is not None:
+        return app
 
     mouse = _parse_mouse(text)
     if mouse is not None:
@@ -136,6 +136,10 @@ def _parse_filesystem(text: str) -> Command | None:
     if not _has_any(text, ("폴더", "디렉터리", "디렉토리", "탐색기")):
         return None
 
+    target = _extract_folder_target(text)
+    if target and _has_any(text, ("들어", "이동", "가", "열어", "보여")):
+        return Command(CommandKind.FILESYSTEM, "go_to", {"target": target}, text)
+
     if _has_any(text, ("현재", "어디", "위치", "보여", "알려")):
         return Command(CommandKind.FILESYSTEM, "show_current", raw_text=text)
     if _has_any(text, ("상위", "위로", "뒤로", "부모")):
@@ -143,9 +147,6 @@ def _parse_filesystem(text: str) -> Command | None:
     if _has_any(text, ("열어", "보여", "띄워")) and not _has_any(text, ("들어", "이동", "가")):
         return Command(CommandKind.FILESYSTEM, "open_current", raw_text=text)
 
-    target = _extract_folder_target(text)
-    if target and _has_any(text, ("들어", "이동", "가", "열어", "보여")):
-        return Command(CommandKind.FILESYSTEM, "go_to", {"target": target}, text)
     return None
 
 
