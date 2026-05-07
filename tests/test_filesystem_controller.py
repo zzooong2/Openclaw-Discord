@@ -68,6 +68,28 @@ def test_folder_navigator_previews_text_file_by_name(tmp_path):
     assert result.message == f"파일 미리보기: {readme.resolve()}\n```text\nhello\nworld\n```"
 
 
+def test_folder_navigator_validates_file_before_close(tmp_path):
+    readme = tmp_path / "README.md"
+    readme.write_text("hello", encoding="utf-8")
+    navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
+
+    result = navigator.close_file("readme")
+
+    assert result.ok is True
+    assert result.message == "파일 창을 닫았습니다."
+    assert result.path == readme.resolve()
+
+
+def test_folder_navigator_closes_active_file_without_target(tmp_path):
+    navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
+
+    result = navigator.close_file()
+
+    assert result.ok is True
+    assert result.message == "파일 창을 닫았습니다."
+    assert result.path == tmp_path.resolve()
+
+
 def test_folder_navigator_rejects_ambiguous_file_match(tmp_path):
     (tmp_path / "report-1.txt").write_text("one", encoding="utf-8")
     (tmp_path / "report-2.txt").write_text("two", encoding="utf-8")

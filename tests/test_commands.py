@@ -157,6 +157,22 @@ def test_parses_open_file_request():
     assert command.payload == {"target": "README.md"}
 
 
+def test_parses_close_file_request():
+    command = parse_command("README.md 파일 닫아줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "close_file"
+    assert command.payload == {"target": "README.md"}
+
+
+def test_parses_close_current_file_request():
+    command = parse_command("파일 닫아줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "close_file"
+    assert command.payload == {}
+
+
 def test_parses_preview_file_request():
     command = parse_command("README.md 파일 내용 일부 보여줘")
 

@@ -192,9 +192,13 @@ class WindowsController:
             result = self.folder_navigator.open_file(command.payload["target"])
         elif command.action == "preview_file":
             result = self.folder_navigator.preview_file(command.payload["target"])
+        elif command.action == "close_file":
+            result = self.folder_navigator.close_file(command.payload.get("target"))
         else:
             raise ValueError(f"Unsupported filesystem action: {command.action}")
 
         if not result.ok:
             raise ValueError(result.message)
+        if command.action == "close_file":
+            self.input_driver.shortcut(("alt", "f4"))
         return result.message

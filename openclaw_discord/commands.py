@@ -138,6 +138,9 @@ def _parse_filesystem(text: str) -> Command | None:
 
     if _has_any(text, ("파일", "내용")):
         file_target = _extract_file_target(text)
+        if _has_any(text, ("닫", "종료", "꺼", "끄")):
+            payload = {"target": file_target} if file_target else {}
+            return Command(CommandKind.FILESYSTEM, "close_file", payload, text)
         if file_target and _has_any(text, ("내용", "미리보기", "일부", "읽어")):
             return Command(CommandKind.FILESYSTEM, "preview_file", {"target": file_target}, text)
         if file_target and _has_any(text, ("열어", "실행", "보여")):
@@ -181,8 +184,11 @@ def _extract_file_target(text: str) -> str | None:
             before = text.split(marker, 1)[0].strip()
             if before:
                 return before.split()[-1]
-    if _has_any(text, ("내용", "미리보기", "열어")):
-        return text.split()[0] if text.split() else None
+    if _has_any(text, ("내용", "미리보기", "열어", "닫", "종료", "꺼", "끄")):
+        first_word = text.split()[0] if text.split() else None
+        if first_word in {"파일", "내용"}:
+            return None
+        return first_word
     return None
 
 

@@ -77,6 +77,10 @@ class FakeFolderNavigator:
         self.calls.append(("preview_file", target))
         return type("Result", (), {"ok": True, "message": f"파일 미리보기: {target}"})()
 
+    def close_file(self, target=None):
+        self.calls.append(("close_file", target))
+        return type("Result", (), {"ok": True, "message": "파일 창을 닫았습니다."})()
+
 
 class FakePyAutoGui:
     def __init__(self):
@@ -205,7 +209,19 @@ def test_executes_filesystem_file_commands_and_returns_message():
     list_message = controller.execute(parse_command("목록 보여줘"))
     open_message = controller.execute(parse_command("README.md 파일 열어줘"))
     preview_message = controller.execute(parse_command("README.md 파일 내용 일부 보여줘"))
+    close_message = controller.execute(parse_command("README.md 파일 닫아줘"))
 
     assert list_message == "현재 폴더: C:\\work\n[파일] README.md"
     assert open_message == "파일을 열었습니다: README.md"
     assert preview_message == "파일 미리보기: README.md"
+    assert close_message == "파일 창을 닫았습니다."
+
+
+def test_executes_close_file_with_alt_f4():
+    input_driver = FakeInputDriver()
+    controller = WindowsController(process_runner=FakeProcessRunner(), input_driver=input_driver)
+
+    message = controller.execute(parse_command("파일 닫아줘"))
+
+    assert message == "파일 창을 닫았습니다."
+    assert input_driver.calls == [("shortcut", ("alt", "f4"))]

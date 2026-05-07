@@ -147,6 +147,14 @@ class FolderNavigator:
             truncated += "\n..."
         return FolderActionResult(True, f"파일 미리보기: {path}\n```text\n{truncated}\n```", path)
 
+    def close_file(self, target: str | Path | None = None) -> FolderActionResult:
+        if target is None:
+            return FolderActionResult(True, "파일 창을 닫았습니다.", self.current_path)
+        result = self._resolve_file(target)
+        if not result.ok:
+            return result
+        return FolderActionResult(True, "파일 창을 닫았습니다.", result.path)
+
     def go_parent(self) -> FolderActionResult:
         return self.go_to(self.current_path.parent)
 
