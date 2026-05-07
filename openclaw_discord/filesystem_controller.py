@@ -272,7 +272,7 @@ class FolderNavigator:
         contained = [
             child
             for child in children
-            if target_key in self._match_key(child.name) or self._match_key(child.name) in target_key
+            if target_key in self._match_key(child.name)
         ]
         return sorted(contained, key=lambda child: child.name.lower())
 

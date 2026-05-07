@@ -104,6 +104,13 @@ def test_parses_show_current_folder_request():
     assert command.action == "show_current"
 
 
+def test_parses_show_current_path_request():
+    command = parse_command("현재 경로 알려줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "show_current"
+
+
 def test_parses_open_current_folder_request():
     command = parse_command("폴더 열어")
 
@@ -140,6 +147,14 @@ def test_parses_open_named_folder_with_explorer_request():
     assert command.kind is CommandKind.FILESYSTEM
     assert command.action == "go_to"
     assert command.payload == {"target": "Downloads"}
+
+
+def test_parses_nested_folder_move_request():
+    command = parse_command("project 폴더에 openclaw+discord 폴더로 이동해줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "go_to"
+    assert command.payload == {"target": "project/openclaw+discord"}
 
 
 def test_parses_list_current_folder_request():

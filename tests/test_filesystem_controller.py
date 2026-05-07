@@ -168,6 +168,35 @@ def test_folder_navigator_goes_to_folder_from_extra_search_root(tmp_path):
     assert runner.opened == [project.resolve()]
 
 
+def test_folder_navigator_goes_to_nested_folder_from_extra_search_root(tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+    drive_root = tmp_path / "drive"
+    target = drive_root / "project" / "openclaw+discord"
+    target.mkdir(parents=True)
+    runner = FakeFolderRunner()
+    navigator = FolderNavigator(current_path=home, extra_search_roots=[drive_root], runner=runner)
+
+    result = navigator.go_to("project/openclaw+discord")
+
+    assert result.ok is True
+    assert navigator.current_path == target.resolve()
+    assert runner.opened == [target.resolve()]
+
+
+def test_folder_navigator_does_not_match_shorter_folder_when_target_is_more_specific(tmp_path):
+    home = tmp_path / "home"
+    home.mkdir()
+    (home / ".openclaw").mkdir()
+    navigator = FolderNavigator(current_path=home, runner=FakeFolderRunner())
+
+    result = navigator.go_to("openclaw+discord")
+
+    assert result.ok is False
+    assert result.message == f"폴더를 찾을 수 없습니다: {(home / 'openclaw+discord').resolve()}"
+    assert navigator.current_path == home.resolve()
+
+
 def test_folder_navigator_goes_to_parent_folder(tmp_path):
     child = tmp_path / "work"
     child.mkdir()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -146,7 +147,7 @@ def _parse_filesystem(text: str) -> Command | None:
         if file_target and _has_any(text, ("열어", "실행", "보여")):
             return Command(CommandKind.FILESYSTEM, "open_file", {"target": file_target}, text)
 
-    if not _has_any(text, ("폴더", "디렉터리", "디렉토리", "탐색기")):
+    if not _has_any(text, ("폴더", "디렉터리", "디렉토리", "탐색기", "경로")):
         return None
 
     target = _extract_folder_target(text)
@@ -164,6 +165,10 @@ def _parse_filesystem(text: str) -> Command | None:
 
 
 def _extract_folder_target(text: str) -> str | None:
+    folder_chain = _extract_folder_chain(text)
+    if folder_chain:
+        return folder_chain
+
     for korean_name, folder_name in KNOWN_FOLDERS.items():
         if korean_name in text:
             return folder_name
@@ -175,6 +180,17 @@ def _extract_folder_target(text: str) -> str | None:
             if candidate:
                 return candidate.split()[-1]
     return None
+
+
+def _extract_folder_chain(text: str) -> str | None:
+    folder_names = [
+        match.group(1).strip()
+        for match in re.finditer(r"([^\s]+)\s*폴더(?:에|의|로|를|을)?", text)
+        if match.group(1).strip()
+    ]
+    if len(folder_names) < 2:
+        return None
+    return "/".join(KNOWN_FOLDERS.get(name, name) for name in folder_names)
 
 
 def _extract_file_target(text: str) -> str | None:
