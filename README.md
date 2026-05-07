@@ -70,6 +70,8 @@ Folder navigation is unrestricted by default. Set this later to keep navigation 
 OPENCLAW_SANDBOX_ROOT=C:\Users\이안\Desktop
 ```
 
+When `OPENCLAW_SANDBOX_ROOT` is set, folder navigation starts at that root and search stays inside it.
+
 Set real PC control only when you are ready:
 
 ```dotenv

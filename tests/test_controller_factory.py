@@ -4,19 +4,23 @@ from openclaw_discord.controllers import DryRunController
 from openclaw_discord.windows_controller import WindowsController
 
 
-def make_settings(controller_mode):
+def make_settings(controller_mode, **overrides):
+    values = {
+        "discord_bot_token": "",
+        "guild_id": "",
+        "owner_user_id": "owner",
+        "voice_channel_id": "",
+        "text_channel_id": "",
+        "log_dir": "logs",
+        "input_block_mode": "simulate",
+        "max_text_input_chars": 40,
+        "controller_mode": controller_mode,
+        "enable_voice_receive": False,
+        "sandbox_root": "",
+    }
+    values.update(overrides)
     return Settings(
-        discord_bot_token="",
-        guild_id="",
-        owner_user_id="owner",
-        voice_channel_id="",
-        text_channel_id="",
-        log_dir="logs",
-        input_block_mode="simulate",
-        max_text_input_chars=40,
-        controller_mode=controller_mode,
-        enable_voice_receive=False,
-        sandbox_root="",
+        **values
     )
 
 
@@ -42,6 +46,16 @@ def test_build_controller_can_create_windows_controller_with_injected_dependenci
     )
 
     assert isinstance(controller, WindowsController)
+
+
+def test_build_controller_starts_folder_navigator_at_sandbox_root(tmp_path):
+    controller = build_controller(
+        make_settings("windows", sandbox_root=str(tmp_path)),
+        process_runner=FakeProcessRunner(),
+        input_driver=FakeInputDriver(),
+    )
+
+    assert controller.folder_navigator.current_path == tmp_path.resolve()
 
 
 def test_build_controller_rejects_unknown_mode():

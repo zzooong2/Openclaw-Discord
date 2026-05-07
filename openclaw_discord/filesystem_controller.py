@@ -86,8 +86,8 @@ class FolderNavigator:
         runner: FolderRunner | None = None,
     ) -> None:
         self.sandbox_root = sandbox_root.resolve() if sandbox_root is not None else None
-        self.current_path = self._normalize(current_path or Path.home())
-        self.extra_search_roots = [self._normalize(root) for root in extra_search_roots or self._default_extra_search_roots()]
+        self.current_path = self._initial_current_path(current_path)
+        self.extra_search_roots = self._allowed_search_roots(extra_search_roots)
         self.runner = runner or ReusingWindowsFolderRunner()
 
     def show_current(self) -> FolderActionResult:
@@ -144,6 +144,26 @@ class FolderNavigator:
 
     def _normalize(self, path: Path) -> Path:
         return path.expanduser().resolve()
+
+    def _initial_current_path(self, current_path: Path | None) -> Path:
+        if current_path is not None:
+            normalized = self._normalize(current_path)
+            if self._is_allowed(normalized):
+                return normalized
+        if self.sandbox_root is not None:
+            return self.sandbox_root
+        return self._normalize(Path.home())
+
+    def _allowed_search_roots(self, extra_search_roots: list[Path] | None) -> list[Path]:
+        if self.sandbox_root is not None:
+            roots = [self.sandbox_root]
+            for root in extra_search_roots or []:
+                normalized = self._normalize(root)
+                if self._is_allowed(normalized) and normalized not in roots:
+                    roots.append(normalized)
+            return roots
+
+        return [self._normalize(root) for root in extra_search_roots or self._default_extra_search_roots()]
 
     def _is_allowed(self, path: Path) -> bool:
         if self.sandbox_root is None:

@@ -163,6 +163,30 @@ def test_folder_navigator_rejects_paths_outside_sandbox(tmp_path):
     assert navigator.current_path == root.resolve()
 
 
+def test_folder_navigator_starts_at_sandbox_root_when_current_path_is_omitted(tmp_path):
+    root = tmp_path / "root"
+    root.mkdir()
+
+    navigator = FolderNavigator(sandbox_root=root, runner=FakeFolderRunner())
+
+    assert navigator.current_path == root.resolve()
+
+
+def test_folder_navigator_does_not_search_extra_roots_outside_sandbox(tmp_path):
+    root = tmp_path / "root"
+    root.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (outside / "project").mkdir()
+    navigator = FolderNavigator(sandbox_root=root, extra_search_roots=[outside], runner=FakeFolderRunner())
+
+    result = navigator.go_to("project")
+
+    assert result.ok is False
+    assert result.message == f"폴더를 찾을 수 없습니다: {(root / 'project').resolve()}"
+    assert navigator.current_path == root.resolve()
+
+
 class FakeLocation:
     def __init__(self, url="file:///C:/Users"):
         self.URL = url
