@@ -214,7 +214,7 @@ def test_executes_filesystem_file_commands_and_returns_message():
     assert list_message == "현재 폴더: C:\\work\n[파일] README.md"
     assert open_message == "파일을 열었습니다: README.md"
     assert preview_message == "파일 미리보기: README.md"
-    assert close_message == "파일 창을 닫았습니다."
+    assert close_message == "파일명을 지정한 닫기는 아직 안전하게 실행할 수 없습니다. 닫을 파일 창을 직접 선택한 뒤 '파일 닫아줘'라고 해주세요."
 
 
 def test_executes_close_file_with_alt_f4():
@@ -225,3 +225,19 @@ def test_executes_close_file_with_alt_f4():
 
     assert message == "파일 창을 닫았습니다."
     assert input_driver.calls == [("shortcut", ("alt", "f4"))]
+
+
+def test_named_file_close_does_not_close_active_window():
+    input_driver = FakeInputDriver()
+    folder_navigator = FakeFolderNavigator()
+    controller = WindowsController(
+        process_runner=FakeProcessRunner(),
+        input_driver=input_driver,
+        folder_navigator=folder_navigator,
+    )
+
+    message = controller.execute(parse_command("README.md 파일 닫아줘"))
+
+    assert message == "파일명을 지정한 닫기는 아직 안전하게 실행할 수 없습니다. 닫을 파일 창을 직접 선택한 뒤 '파일 닫아줘'라고 해주세요."
+    assert input_driver.calls == []
+    assert folder_navigator.calls == [("close_file", "README.md")]

@@ -200,5 +200,7 @@ class WindowsController:
         if not result.ok:
             raise ValueError(result.message)
         if command.action == "close_file":
+            if command.payload.get("target"):
+                return "파일명을 지정한 닫기는 아직 안전하게 실행할 수 없습니다. 닫을 파일 창을 직접 선택한 뒤 '파일 닫아줘'라고 해주세요."
             self.input_driver.shortcut(("alt", "f4"))
         return result.message
