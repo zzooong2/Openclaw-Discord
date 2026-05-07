@@ -133,6 +133,16 @@ KNOWN_FOLDERS: dict[str, str] = {
 
 
 def _parse_filesystem(text: str) -> Command | None:
+    if _has_any(text, ("목록", "리스트")) and _has_any(text, ("보여", "알려", "출력")):
+        return Command(CommandKind.FILESYSTEM, "list_current", raw_text=text)
+
+    if _has_any(text, ("파일", "내용")):
+        file_target = _extract_file_target(text)
+        if file_target and _has_any(text, ("내용", "미리보기", "일부", "읽어")):
+            return Command(CommandKind.FILESYSTEM, "preview_file", {"target": file_target}, text)
+        if file_target and _has_any(text, ("열어", "실행", "보여")):
+            return Command(CommandKind.FILESYSTEM, "open_file", {"target": file_target}, text)
+
     if not _has_any(text, ("폴더", "디렉터리", "디렉토리", "탐색기")):
         return None
 
@@ -161,6 +171,18 @@ def _extract_folder_target(text: str) -> str | None:
             candidate = text.split(marker, 1)[0].strip()
             if candidate:
                 return candidate.split()[-1]
+    return None
+
+
+def _extract_file_target(text: str) -> str | None:
+    markers = ("파일 내용", "파일을", "파일 열", "파일 보여", "파일")
+    for marker in markers:
+        if marker in text:
+            before = text.split(marker, 1)[0].strip()
+            if before:
+                return before.split()[-1]
+    if _has_any(text, ("내용", "미리보기", "열어")):
+        return text.split()[0] if text.split() else None
     return None
 
 

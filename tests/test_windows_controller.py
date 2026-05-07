@@ -57,6 +57,10 @@ class FakeFolderNavigator:
         self.calls.append(("open_current",))
         return type("Result", (), {"ok": True, "message": "폴더를 열었습니다: C:\\work"})()
 
+    def list_current(self):
+        self.calls.append(("list_current",))
+        return type("Result", (), {"ok": True, "message": "현재 폴더: C:\\work\n[파일] README.md"})()
+
     def go_parent(self):
         self.calls.append(("go_parent",))
         return type("Result", (), {"ok": True, "message": "이동한 폴더: C:\\"})()
@@ -64,6 +68,14 @@ class FakeFolderNavigator:
     def go_to(self, target):
         self.calls.append(("go_to", target))
         return type("Result", (), {"ok": True, "message": f"이동한 폴더: {target}"})()
+
+    def open_file(self, target):
+        self.calls.append(("open_file", target))
+        return type("Result", (), {"ok": True, "message": f"파일을 열었습니다: {target}"})()
+
+    def preview_file(self, target):
+        self.calls.append(("preview_file", target))
+        return type("Result", (), {"ok": True, "message": f"파일 미리보기: {target}"})()
 
 
 class FakePyAutoGui:
@@ -180,3 +192,20 @@ def test_executes_filesystem_command_and_returns_message():
 
     assert message == "이동한 폴더: Downloads"
     assert folder_navigator.calls == [("go_to", "Downloads")]
+
+
+def test_executes_filesystem_file_commands_and_returns_message():
+    folder_navigator = FakeFolderNavigator()
+    controller = WindowsController(
+        process_runner=FakeProcessRunner(),
+        input_driver=FakeInputDriver(),
+        folder_navigator=folder_navigator,
+    )
+
+    list_message = controller.execute(parse_command("목록 보여줘"))
+    open_message = controller.execute(parse_command("README.md 파일 열어줘"))
+    preview_message = controller.execute(parse_command("README.md 파일 내용 일부 보여줘"))
+
+    assert list_message == "현재 폴더: C:\\work\n[파일] README.md"
+    assert open_message == "파일을 열었습니다: README.md"
+    assert preview_message == "파일 미리보기: README.md"

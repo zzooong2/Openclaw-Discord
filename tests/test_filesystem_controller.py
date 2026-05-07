@@ -10,6 +10,9 @@ class FakeFolderRunner:
     def open_folder(self, path):
         self.opened.append(path)
 
+    def open_file(self, path):
+        self.opened.append(path)
+
 
 def test_folder_navigator_shows_current_folder(tmp_path):
     navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
@@ -28,6 +31,63 @@ def test_folder_navigator_opens_current_folder(tmp_path):
 
     assert result.ok is True
     assert runner.opened == [tmp_path.resolve()]
+
+
+def test_folder_navigator_lists_current_folder(tmp_path):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "README.md").write_text("hello", encoding="utf-8")
+    navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
+
+    result = navigator.list_current()
+
+    assert result.ok is True
+    assert result.message == f"현재 폴더: {tmp_path.resolve()}\n[폴더] docs\n[파일] README.md"
+
+
+def test_folder_navigator_opens_file_by_name(tmp_path):
+    readme = tmp_path / "README.md"
+    readme.write_text("hello", encoding="utf-8")
+    runner = FakeFolderRunner()
+    navigator = FolderNavigator(current_path=tmp_path, runner=runner)
+
+    result = navigator.open_file("readme")
+
+    assert result.ok is True
+    assert result.message == f"파일을 열었습니다: {readme.resolve()}"
+    assert runner.opened == [readme.resolve()]
+
+
+def test_folder_navigator_previews_text_file_by_name(tmp_path):
+    readme = tmp_path / "README.md"
+    readme.write_text("hello\nworld", encoding="utf-8")
+    navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
+
+    result = navigator.preview_file("readme")
+
+    assert result.ok is True
+    assert result.message == f"파일 미리보기: {readme.resolve()}\n```text\nhello\nworld\n```"
+
+
+def test_folder_navigator_rejects_ambiguous_file_match(tmp_path):
+    (tmp_path / "report-1.txt").write_text("one", encoding="utf-8")
+    (tmp_path / "report-2.txt").write_text("two", encoding="utf-8")
+    navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
+
+    result = navigator.open_file("report")
+
+    assert result.ok is False
+    assert result.message == "파일 이름이 여러 개와 일치합니다: report-1.txt, report-2.txt"
+
+
+def test_folder_navigator_rejects_binary_file_preview(tmp_path):
+    binary = tmp_path / "image.bin"
+    binary.write_bytes(b"\x00\x01\x02")
+    navigator = FolderNavigator(current_path=tmp_path, runner=FakeFolderRunner())
+
+    result = navigator.preview_file("image")
+
+    assert result.ok is False
+    assert result.message == f"텍스트 파일로 보기 어렵습니다: {binary.resolve()}"
 
 
 def test_folder_navigator_goes_to_child_folder(tmp_path):

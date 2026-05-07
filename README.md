@@ -31,6 +31,14 @@ bot: 실행 완료: 계산기 좀 종료해줘
 
 김현종: 다운로드 폴더로 들어가
 bot: 이동한 폴더: C:\Users\이안\Downloads
+
+김현종: 목록 보여줘
+bot: 현재 폴더: C:\Users\이안\Downloads
+[폴더] example
+[파일] README.md
+
+김현종: README.md 파일 내용 일부 보여줘
+bot: 파일 미리보기: C:\Users\이안\Downloads\README.md
 ```
 
 ## Supported Intent Groups
@@ -38,6 +46,7 @@ bot: 이동한 폴더: C:\Users\이안\Downloads
 - Mode: turn OpenClaw control on or off.
 - Apps: open or close Notepad, Calculator, Chrome, and File Explorer.
 - Folders: show, open, enter, and move up from the current folder. Existing File Explorer windows are reused when possible, and child folders can be reached by partial name.
+- Files: list current contents, open files, and preview the start of text files.
 - Mouse: move, position, left click, right click, double click.
 - Keyboard: Enter, Escape, common shortcuts, and short text input.
 - Confirmation: confirm or cancel pending risky commands.

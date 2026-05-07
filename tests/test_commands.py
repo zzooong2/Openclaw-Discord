@@ -142,6 +142,29 @@ def test_parses_open_named_folder_with_explorer_request():
     assert command.payload == {"target": "Downloads"}
 
 
+def test_parses_list_current_folder_request():
+    command = parse_command("목록 보여줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "list_current"
+
+
+def test_parses_open_file_request():
+    command = parse_command("README.md 파일 열어줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "open_file"
+    assert command.payload == {"target": "README.md"}
+
+
+def test_parses_preview_file_request():
+    command = parse_command("README.md 파일 내용 일부 보여줘")
+
+    assert command.kind is CommandKind.FILESYSTEM
+    assert command.action == "preview_file"
+    assert command.payload == {"target": "README.md"}
+
+
 def test_parses_go_to_searches_folder_request():
     command = parse_command("검색 폴더로 가줘")
 

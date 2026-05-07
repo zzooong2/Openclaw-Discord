@@ -10,9 +10,15 @@ class FolderRunner(Protocol):
     def open_folder(self, path: Path) -> None:
         """Open a folder in the platform file manager."""
 
+    def open_file(self, path: Path) -> None:
+        """Open a file with its default application."""
+
 
 class WindowsFolderRunner:
     def open_folder(self, path: Path) -> None:
+        os.startfile(str(path))  # type: ignore[attr-defined]
+
+    def open_file(self, path: Path) -> None:
         os.startfile(str(path))  # type: ignore[attr-defined]
 
 
@@ -37,6 +43,9 @@ class ReusingWindowsFolderRunner:
             window.Navigate(str(resolved))
         except Exception:
             self.fallback_runner.open_folder(resolved)
+
+    def open_file(self, path: Path) -> None:
+        self.fallback_runner.open_file(path.resolve())
 
     def _find_explorer_window(self) -> object | None:
         try:
@@ -97,6 +106,47 @@ class FolderNavigator:
         self.runner.open_folder(self.current_path)
         return FolderActionResult(True, f"폴더를 열었습니다: {self.current_path}", self.current_path)
 
+    def list_current(self) -> FolderActionResult:
+        try:
+            children = sorted(self.current_path.iterdir(), key=lambda child: (not child.is_dir(), child.name.casefold()))
+        except OSError as exc:
+            return FolderActionResult(False, f"목록을 읽을 수 없습니다: {exc}", self.current_path)
+
+        lines = [f"현재 폴더: {self.current_path}"]
+        if not children:
+            lines.append("(비어 있음)")
+        for child in children[:30]:
+            label = "폴더" if child.is_dir() else "파일"
+            lines.append(f"[{label}] {child.name}")
+        if len(children) > 30:
+            lines.append(f"... 외 {len(children) - 30}개")
+        return FolderActionResult(True, "\n".join(lines), self.current_path)
+
+    def open_file(self, target: str | Path) -> FolderActionResult:
+        result = self._resolve_file(target)
+        if not result.ok:
+            return result
+        self.runner.open_file(result.path)
+        return FolderActionResult(True, f"파일을 열었습니다: {result.path}", result.path)
+
+    def preview_file(self, target: str | Path, *, max_chars: int = 1300) -> FolderActionResult:
+        result = self._resolve_file(target)
+        if not result.ok:
+            return result
+        path = result.path
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            return FolderActionResult(False, f"파일을 읽을 수 없습니다: {exc}", self.current_path)
+        if b"\x00" in data[:1024]:
+            return FolderActionResult(False, f"텍스트 파일로 보기 어렵습니다: {path}", path)
+        text = data.decode("utf-8-sig", errors="replace")
+        text = text.replace("\r\n", "\n").replace("\r", "\n")
+        truncated = text[:max_chars]
+        if len(text) > max_chars:
+            truncated += "\n..."
+        return FolderActionResult(True, f"파일 미리보기: {path}\n```text\n{truncated}\n```", path)
+
     def go_parent(self) -> FolderActionResult:
         return self.go_to(self.current_path.parent)
 
@@ -141,6 +191,24 @@ class FolderNavigator:
                 return self._normalize(candidate)
 
         return self._normalize(self.current_path / path)
+
+    def _resolve_file(self, target: str | Path) -> FolderActionResult:
+        path = self._resolve_target(target)
+        matched_files: list[Path] | None = None
+        if not path.exists() and isinstance(target, str):
+            matched_files = self._find_child_file_matches(target)
+            if len(matched_files) == 1:
+                path = matched_files[0]
+            elif len(matched_files) > 1:
+                names = ", ".join(child.name for child in matched_files[:5])
+                return FolderActionResult(False, f"파일 이름이 여러 개와 일치합니다: {names}", self.current_path, matched_files)
+        if not path.exists():
+            return FolderActionResult(False, f"파일을 찾을 수 없습니다: {path}", self.current_path)
+        if not path.is_file():
+            return FolderActionResult(False, f"파일이 아닙니다: {path}", self.current_path)
+        if not self._is_allowed(path):
+            return FolderActionResult(False, f"허용된 루트 밖입니다: {path}", self.current_path)
+        return FolderActionResult(True, "", path.resolve())
 
     def _normalize(self, path: Path) -> Path:
         return path.expanduser().resolve()
@@ -197,6 +265,26 @@ class FolderNavigator:
             child
             for child in children
             if target_key in self._match_key(child.name) or self._match_key(child.name) in target_key
+        ]
+        return sorted(contained, key=lambda child: child.name.lower())
+
+    def _find_child_file_matches(self, target: str) -> list[Path]:
+        target_key = self._match_key(target)
+        if not target_key:
+            return []
+        try:
+            children = [child for child in self.current_path.iterdir() if child.is_file() and self._is_allowed(child)]
+        except OSError:
+            return []
+
+        exact = [child for child in children if self._match_key(child.name) == target_key or self._match_key(child.stem) == target_key]
+        if exact:
+            return sorted(exact, key=lambda child: child.name.lower())
+
+        contained = [
+            child
+            for child in children
+            if target_key in self._match_key(child.name) or target_key in self._match_key(child.stem)
         ]
         return sorted(contained, key=lambda child: child.name.lower())
 

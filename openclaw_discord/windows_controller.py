@@ -182,10 +182,16 @@ class WindowsController:
             result = self.folder_navigator.show_current()
         elif command.action == "open_current":
             result = self.folder_navigator.open_current()
+        elif command.action == "list_current":
+            result = self.folder_navigator.list_current()
         elif command.action == "go_parent":
             result = self.folder_navigator.go_parent()
         elif command.action == "go_to":
             result = self.folder_navigator.go_to(command.payload["target"])
+        elif command.action == "open_file":
+            result = self.folder_navigator.open_file(command.payload["target"])
+        elif command.action == "preview_file":
+            result = self.folder_navigator.preview_file(command.payload["target"])
         else:
             raise ValueError(f"Unsupported filesystem action: {command.action}")
 
